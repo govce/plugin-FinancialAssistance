@@ -8,7 +8,7 @@ $em = $app->em;
 $conn = $em->getConnection();
 
 return array(
-  'create table secultce_payments' => function() use($conn) {
+  'create table secultce_payment' => function() use($conn) {
 
     if (MapasCulturais__table_exists("secultce_payment")) {
       echo "TABLE secultce_payment ALREADY EXISTS";
@@ -60,7 +60,7 @@ return array(
       CREATE TABLE secultce_payment_history (
         id INT NOT NULL,
         payment_id INT,
-        files_id INT,
+        file_id INT,
         action VARCHAR(255),
         result TEXT,
         file_date TIMESTAMP,
@@ -74,6 +74,10 @@ return array(
 
     MapasCulturais__try("
       ALTER TABLE secultce_payment_history ADD CONSTRAINT secultce_payment_history_fk_payment_id FOREIGN KEY (payment_id) REFERENCES secultce_payment (id)
+    ");
+
+    MapasCulturais__try("
+      ALTER TABLE secultce_payment_history ADD CONSTRAINT secultce_payment_history_fk_file_id FOREIGN KEY (file_id) REFERENCES file (id)
     ");
   }
 );
