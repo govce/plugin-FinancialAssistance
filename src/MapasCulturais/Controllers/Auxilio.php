@@ -3,6 +3,7 @@
 namespace MapasCulturais\Controllers;
 
 use DateTime;
+use Normalizer;
 use MapasCulturais\App;
 use MapasCulturais\i;
 use MapasCulturais\Entities\Registration;
@@ -14,102 +15,43 @@ class Auxilio extends EntityController {
   public function __construct() {
     parent::__construct();
 
+    $app = App::i();
+
     $this->entityClassName = "\MapasCulturais\Entities\Auxilio";
+    $this->config = $app->plugins['RegistrationPaymentsAuxilio']->config;
   }
 
-  private function insertNewApproved(int $opportunity_id) {
+    /**
+   * Retorna a oportunidade
+   * 
+   * @return \MapasCulturais\Entities\Opportunity 
+   * @throws Exception 
+   */
+  private function getOpportunity() {
     $app = App::i();
+    
+    $opportunity_id = $this->data['opportunity'];
 
-    $payments_registration_id = [];
-    $status_approved = Registration::STATUS_APPROVED;
-    $payments = $app->repo("SecultCEPayment")->findAll();
+    /**
+     * Pega informações da oportunidade
+     */
+    $opportunity = $app->repo('Opportunity')->find($opportunity_id);
+    $this->registerRegistrationMetadata($opportunity);
 
-
-    foreach($payments as $pay) {
-      $payments_registration_id[] = $pay->registration->id;
+    if (!$opportunity->canUser('@control')) {
+        echo "Não autorizado";
+        die();
     }
 
-    // TESTE
-    // $payments_registration_id[] = "12309482";
-    // $payments_registration_id[] = "09878987";
-
-    $query = "
-      SELECT
-        *
-      FROM
-        registration
-      WHERE
-        status = $status_approved
-        AND opportunity_id = $opportunity_id
-    ";
-
-    $not_in = implode(', ', $payments_registration_id);
-
-    if (count($payments_registration_id) > 0) {
-      $query .= "AND id NOT IN ($not_in)";
-    }
-
-    $query .= ";";
-
-    $stmt = $app->em->getConnection()->prepare($query);
-    $stmt->execute();
-    $registrations = $stmt->fetchAll();
-
-    foreach($registrations as $reg) {
-      $payInstallment1 = new SecultCEPayment();
-      $payInstallment2 = new SecultCEPayment();
-
-      $registration = $app->repo("Registration")->findOneBy([ "id" => $reg["id"]]);
-
-      $payInstallment1->installment = 1;
-      $payInstallment1->value = 500;
-      $payInstallment1->status = 0;
-      $payInstallment1->setRegistration($registration);
-
-      $payInstallment2->installment = 2;
-      $payInstallment2->value = 500;
-      $payInstallment2->status = 0;
-      $payInstallment2->setRegistration($registration);
-
-      $app->em->persist($payInstallment1);
-      $app->em->persist($payInstallment2);
-    }
-
-    $app->em->flush();
+    return $opportunity;
   }
 
-  private function searchPayments($data) {
-    $app = App::i();
-
-    $query = "SELECT * FROM secultce_payment
-      WHERE
-        installment = {$data['installment']}
-    ";
-
-    if ($data["registrations"] !== "") {
-      $registrations_array = explode(";", $data["registrations"]);
-      $registrations_string = implode(", ", $registrations_array);
-
-      $query .= "AND registration_id IN ($registrations_string)";
-    }
-
-    if ($data["remakePayment"]) {
-      $query .= "AND status IN (0, 1, 2)";
-    } else {
-      $query .= "AND status = 0";
-    }
-
-    $query .= ";";
-
-    $stmt = $app->em->getConnection()->prepare($query);
-    $stmt->execute();
-    $payments = $stmt->fetchAll();
-
-    return $payments;
+  private function normalizeString($valor): string {
+      $valor = Normalizer::normalize($valor, Normalizer::FORM_D);
+      return preg_replace('/[^A-Za-z0-9 ]/i', '', $valor);
   }
-
-  public function generateCnab240()
-  {
+  
+  private function generateCnab240($payments) {
       ini_set('max_execution_time', 0);
       ini_set('memory_limit', '768M');
 
@@ -127,13 +69,14 @@ class Auxilio extends EntityController {
 
       $opportunity = $this->getOpportunity();
       $opportunity_id = $opportunity->id;
-      $registrations = $this->getRegistrations($opportunity);
+      // $registrations = $this->getRegistrations($opportunity);
+      $registrations = $payments;
       $parametersForms = $this->getParametersForms();
       
       /**
        * Pega os dados das configurações
        */
-      $txt_config = $this->config['config-cnab240-inciso1'];
+      $txt_config = $this->config['config-cnab240'];
       $default = $txt_config['parameters_default'];           
       $header1 = $txt_config['HEADER1'];
       $header2 = $txt_config['HEADER2'];
@@ -1194,12 +1137,115 @@ class Auxilio extends EntityController {
 
   }
 
+  private function insertNewApproved(int $opportunity_id) {
+    $app = App::i();
+
+    $payments_registration_id = [];
+    $status_approved = Registration::STATUS_APPROVED;
+    $payments = $app->repo("SecultCEPayment")->findAll();
+
+
+    foreach($payments as $pay) {
+      $payments_registration_id[] = $pay->registration->id;
+    }
+
+    // TESTE
+    // $payments_registration_id[] = "12309482";
+    // $payments_registration_id[] = "09878987";
+
+    $query = "
+      SELECT
+        *
+      FROM
+        registration
+      WHERE
+        status = $status_approved
+        AND opportunity_id = $opportunity_id
+    ";
+
+    $not_in = implode(', ', $payments_registration_id);
+
+    if (count($payments_registration_id) > 0) {
+      $query .= "AND id NOT IN ($not_in)";
+    }
+
+    $query .= ";";
+
+    $stmt = $app->em->getConnection()->prepare($query);
+    $stmt->execute();
+    $registrations = $stmt->fetchAll();
+
+    foreach($registrations as $reg) {
+      $payInstallment1 = new SecultCEPayment();
+      $payInstallment2 = new SecultCEPayment();
+
+      $registration = $app->repo("Registration")->findOneBy([ "id" => $reg["id"]]);
+
+      $payInstallment1->installment = 1;
+      $payInstallment1->value = 500;
+      $payInstallment1->status = 0;
+      $payInstallment1->setRegistration($registration);
+
+      $payInstallment2->installment = 2;
+      $payInstallment2->value = 500;
+      $payInstallment2->status = 0;
+      $payInstallment2->setRegistration($registration);
+
+      $app->em->persist($payInstallment1);
+      $app->em->persist($payInstallment2);
+    }
+
+    $app->em->flush();
+  }
+
+  private function searchPayments($data) {
+    $app = App::i();
+
+    $dql = "SELECT se FROM MapasCulturais\\Entities\\SecultCEPayment se
+        JOIN MapasCulturais\\Entities\\Registration r WITH r.id = se.registration
+      WHERE
+        se.installment = {$data['installment']}
+    ";
+
+    if ($data["registrations"] !== "") {
+      $registrations_array = explode(";", $data["registrations"]);
+      $registrations_string = implode(", ", $registrations_array);
+
+      $dql .= "AND se.registration_id IN ($registrations_string)";
+    }
+
+    if ($data["remakePayment"]) {
+      $dql .= "AND se.status IN (0, 1, 2)";
+    } else {
+      $dql .= "AND se.status = 0";
+    }
+
+    // $dql .= ";";
+
+    $query = $app->em->createQuery($dql);
+    $payments = $query->getResult();
+
+    if (empty($payments)) {
+      echo "Não foram encontrados pagamentos.";
+      die();
+    }
+
+    // $stmt = $app->em->getConnection()->prepare($query);
+    // $stmt->execute();
+    // $payments = $stmt->fetchAll();
+
+    return $payments;
+  }
+
   private function updatePayments() {
 
   }
 
-  public function ALL_payment() {    
+  private function sendEmails(string $emails) {
 
+  }
+
+  public function ALL_payment() {
     if ($this->data["paymentDate"] === "") {
       echo "Escolha a data de pagamento. Me ajude!!";
       return;
@@ -1214,5 +1260,6 @@ class Auxilio extends EntityController {
     if ($success) { 
       $this->updatePayments($payments);
     }
+
   }
 }

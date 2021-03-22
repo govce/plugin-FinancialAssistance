@@ -30,7 +30,7 @@ return array(
         return_file_id INT,
         error TEXT,
 
-        PRIMARY KEY ('id')
+        PRIMARY KEY (id)
       )
     ");
 
