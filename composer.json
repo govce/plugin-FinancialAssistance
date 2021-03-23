@@ -3,5 +3,8 @@
     "psr-0": {
       "MapasCulturais\\": "src/"
     }
-  } 
+  },
+  "require": {
+    "league/csv": "^9.6"
+  }
 }

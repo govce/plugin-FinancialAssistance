@@ -4,6 +4,9 @@ namespace MapasCulturais\Controllers;
 
 use DateTime;
 use Normalizer;
+use League\Csv\Reader;
+use League\Csv\Writer;
+use League\Csv\Statement;
 use MapasCulturais\App;
 use MapasCulturais\i;
 use MapasCulturais\Entities\Registration;
@@ -19,6 +22,9 @@ class Auxilio extends EntityController {
 
     $this->entityClassName = "\MapasCulturais\Entities\Auxilio";
     $this->config = $app->plugins['RegistrationPaymentsAuxilio']->config;
+
+    $opportunity = $app->repo('Opportunity')->find($this->config["opportunity_id"]);
+    $app->controller('Registration')->registerRegistrationMetadata($opportunity);
   }
 
     /**
@@ -50,6 +56,115 @@ class Auxilio extends EntityController {
       $valor = Normalizer::normalize($valor, Normalizer::FORM_D);
       return preg_replace('/[^A-Za-z0-9 ]/i', '', $valor);
   }
+
+  private function numberBank($bankName) {
+      $bankName = strtolower(preg_replace('/\\s\\s+/', ' ',$this->normalizeString($bankName)));
+      $bankList = $this->readingCsvFromTo('CSV/fromToNumberBank.csv');
+      $list = [];
+      foreach ($bankList as $key => $value) {
+          $list[$key]['BANK'] = strtolower(preg_replace('/\\s\\s+/', ' ',$this->normalizeString($value['BANK'])));
+          $list[$key]['NUMBER'] = strtolower(preg_replace('/\\s\\s+/', ' ',$this->normalizeString($value['NUMBER'])));
+      }
+      $result = 0;
+      foreach ($list as $key => $value) {
+          if($value['BANK'] === $bankName){
+              $result = $value['NUMBER'];
+              break;
+          }
+      }
+      return $result;
+  }
+
+  private function readingCsvFromTo($filename){
+
+    $filename = __DIR__."/../../../".$filename;
+
+    //Verifica se o arquivo existe
+    if(!file_exists($filename)){
+        return false;
+    }
+
+    $data = [];
+     //Abre o arquivo em modo de leitura
+     $stream = fopen($filename, "r");
+
+     //Faz a leitura do arquivo
+     $csv = Reader::createFromStream($stream);
+
+     //Define o limitador do arqivo (, ou ;)
+     $csv->setDelimiter(";");
+
+     //Seta em que linha deve se iniciar a leitura
+     $header_temp = $csv->setHeaderOffset(0);
+
+     //Faz o processamento dos dados
+     $stmt = (new Statement());
+     $results = $stmt->process($csv);
+     foreach($results as $key => $value){
+        $data[$key] = $value;
+     }
+     return $data;
+  }
+
+  private function createString($value) {
+      $data = "";
+      $qtd = strlen($value['default']);
+      $length = $value['length'];
+      $type = $value['type'];
+      $diff = 0;
+      $complet = "";
+
+      if ($qtd < $length) {
+          $diff = $length - $qtd;
+      }
+
+      $value['default'] = Normalizer::normalize($value['default'], Normalizer::FORM_D);
+      $regex = isset($value['filter']) ? $value['filter'] : '/[^a-z0-9 ]/i';
+      $value['default'] = preg_replace($regex, '', $value['default']);
+
+      if ($type === 'int') {
+          $data .= str_pad($value['default'], $length, '0', STR_PAD_LEFT);
+      } else {
+          $data .= str_pad($value['default'], $length, " ");
+      }
+      return substr($data, 0, $length);
+  }
+
+  private function mountTxt($array, $mapped, $txt_data, $register, $complement, $app) {        
+      if ($complement) {
+          foreach ($complement as $key => $value) {
+              $array[$key]['default'] = $value;
+          }
+      }
+      
+      foreach ($array as $key => $value) {
+          if ($value['field_id']) {
+              if (is_callable($mapped[$key])) {
+                  $data = $mapped[$key];
+                  $value['default'] = $data($register);
+                  $value['field_id'] = null;
+                  $txt_data .= $this->createString($value);
+                  $value['default'] = null;
+                  $value['field_id'] = $value['field_id'];
+
+                  if ($key == "VALOR_INTEIRO") {
+                      $inteiro = 0;
+
+                      if ($key == "VALOR_INTEIRO") {
+                          $inteiro = $data($register);
+                      }
+
+                      $valor = $inteiro;
+
+                      $_SESSION['valor'] = $_SESSION['valor'] + $valor;
+                  }
+              }
+          } else {
+              $txt_data .= $this->createString($value);
+          }
+      }        
+      return $txt_data;
+  }
   
   private function generateCnab240($payments) {
       ini_set('max_execution_time', 0);
@@ -71,7 +186,7 @@ class Auxilio extends EntityController {
       $opportunity_id = $opportunity->id;
       // $registrations = $this->getRegistrations($opportunity);
       $registrations = $payments;
-      $parametersForms = $this->getParametersForms();
+      // $parametersForms = $this->getParametersForms();
       
       /**
        * Pega os dados das configurações
@@ -860,13 +975,13 @@ class Auxilio extends EntityController {
         
           foreach ($registrations as $value) {
               //Caso nao exista pagamento para a inscrição, ele a ignora e notifica na tela
-              if(!$this->validatedPayment($value)){
-                  $app->log->info("\n".$value->number . " - Pagamento nao encontrado.");
-                  continue;
-              }
+              // if(!$this->validatedPayment($value)){
+              //     $app->log->info("\n".$value->number . " - Pagamento nao encontrado.");
+              //     continue;
+              // }
 
-              if ($this->numberBank($value->$field_banco) == "001") {               
-                  if ($value->$field_TipoConta == "Conta corrente") {
+              if ($this->numberBank($value->registration->$field_banco) == "001") {               
+                  if ($value->registration->$field_TipoConta == "Conta corrente") {
                       $recordsBBCorrente[] = $value;
                   } else {
                       $recordsBBPoupanca[] = $value;
@@ -883,7 +998,7 @@ class Auxilio extends EntityController {
           $app->log->info($countBanked . " BANCARIZADOS");
           $app->log->info($countUnbanked . " DESBANCARIZADOS");
       }
-
+      
       //Mostra no terminal resumo da separação entre CORRENTE BB, POUPANÇA BB OUTROS BANCOS e SEM INFORMAÇÃO BANCÁRIA
       $app->log->info("\nResumo da separação entre CORRENTE BB, POUPANÇA BB, OUTROS BANCOS e SEM INFORMAÇÃO BANCÁRIA");
       $app->log->info(count($recordsBBCorrente) . " CORRENTE BB");
@@ -891,6 +1006,9 @@ class Auxilio extends EntityController {
       $app->log->info(count($recordsOthers) . " OUTROS BANCOS");
       $app->log->info($noFormoReceipt . " SEM INFORMAÇÃO BANCÁRIA");
       sleep(1);
+
+
+      
       
       //Verifica se existe registros em algum dos arrays. Caso não exista exibe a mensagem
       $validaExist = array_merge($recordsBBCorrente, $recordsOthers, $recordsBBPoupanca);
@@ -1114,7 +1232,7 @@ class Auxilio extends EntityController {
       /**
        * cria o arquivo no servidor e insere o conteuto da váriavel $txt_data
        */
-      $file_name = 'inciso1-cnab240-'. $this->getStatus($this->data[$parametersForms['typeExport']]) .$opportunity_id.'-' . md5(json_encode($txt_data)) . '.txt';
+      $file_name = 'cnab240-'.$opportunity_id.'-' . md5(json_encode($txt_data)) . '.txt';
 
       $dir = PRIVATE_FILES_PATH . 'aldirblanc/inciso1/remessas/cnab240/';
 
@@ -1238,7 +1356,7 @@ class Auxilio extends EntityController {
   }
 
   private function updatePayments() {
-
+    
   }
 
   private function sendEmails(string $emails) {
@@ -1257,9 +1375,8 @@ class Auxilio extends EntityController {
 
     $success = $this->generateCnab240($payments);
 
-    if ($success) { 
-      $this->updatePayments($payments);
-    }
-
+    // if (true) { 
+    //   $this->updatePayments($payments);
+    // }
   }
 }
