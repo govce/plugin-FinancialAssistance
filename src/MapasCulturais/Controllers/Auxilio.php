@@ -13,10 +13,12 @@ use MapasCulturais\Entities\Registration;
 use MapasCulturais\Entities\SecultCEPayment;
 use MapasCulturais\Controllers\EntityController;
 
-class Auxilio extends EntityController {
+class Auxilio extends EntityController
+{
 
-  public function __construct() {
-    parent::__construct();
+    public function __construct()
+    {
+        parent::__construct();
 
     $app = App::i();
 
@@ -1377,8 +1379,49 @@ class Auxilio extends EntityController {
     return $payments;
   }
 
-  private function updatePayments() {
-    
+  private function updatePayments($payments) {
+    $app = App::i();
+    $date_payment = $this->data['paymentDate'];
+    $sent_date = date("Y-m-d H:i:s", time());
+    //var_dump($sent_date);
+    //die();
+    //$data_divulgacao = strval($dataHora);
+    $installment = $this->data['installment'];
+
+    foreach ($payments as $p) {
+        $registration_id = $p['registration_id'];
+        $payment_id = $p['id'];
+        var_dump($registration_id);
+        //die();
+
+        $query_update = "
+                UPDATE
+                    public.secultce_payment
+                SET
+                    status = '1'
+                    --and payment_date = 'NULL' --$date_payment
+                    --and sent_date = 'NULL' --$sent_date          
+                    --and generate_file_date
+                    --and return_date
+                    --and payment_file_id
+                    --and error
+                WHERE
+                    registration_id = $registration_id
+                    and installment = $installment
+            ";
+        $query_insert = "
+                INSERT INTO public.secultce_payment_history
+                    (id, payment_id, file_id, action, result, file_date, payment_date)
+                values
+                    (1, ID.secultce_payment, NULL, NULL, NULL, NULL, NULL)
+            ";
+
+        $stmt_update = $app->em->getConnection()->prepare($query_update);
+        $stmt_update->execute();
+        $stmt_insert = $app->em->getConnection()->prepare($query_insert);
+        $stmt_insert->execute();
+    }
+    echo 'Inscrições enviadas para pagamento!';
   }
 
   private function sendEmails(string $emails) {
@@ -1391,14 +1434,19 @@ class Auxilio extends EntityController {
       return;
     }
 
+    if ($this->data["paymentDate"] === "") {
+        echo "Escolha a data de pagamento. Me ajude!!";
+        return;
+    }
+
     $this->insertNewApproved($this->data["opportunity"]);
 
     $payments = $this->searchPayments($this->data);
 
-    $success = $this->generateCnab240($payments);
+    //$success = $this->generateCnab240($payments);
 
-    // if (true) { 
-    //   $this->updatePayments($payments);
-    // }
+    if (true) { 
+      $this->updatePayments($payments);
+    }
   }
 }
