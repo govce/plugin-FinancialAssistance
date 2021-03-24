@@ -1,8 +1,9 @@
 <?php
-    use MapasCulturais\App;
-    use MapasCulturais\i;
 
-    $route = App::i()->createUrl('paymentauxilio', 'payment');
+use MapasCulturais\App;
+use MapasCulturais\i;
+
+$route = App::i()->createUrl('paymentauxilio', 'payment');
 ?>
 
 <!--botão de imprimir-->
@@ -28,7 +29,7 @@
 
         <label for="emails">Emails</label>
         <textarea name="emails" id="emails" cols="30" rows="2" placeholder="Separe por ponto e virgula Ex.: meuemail@secult.ce.gob.br;ben.rainir@secult.ce.gob.br"></textarea>
-        
+
         <input type="hidden" name="opportunity" value="<?= $opportunity->id ?>">
         <button class="btn btn-primary download" type="submit">Gerar Pagamento</button>
     </form>

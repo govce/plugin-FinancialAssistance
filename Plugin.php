@@ -35,11 +35,11 @@ class Plugin extends \MapasCulturais\Plugin
     });
 
     //BOTÃO DE VERIFICAÇÃO DE INSCRIÇÃO   
-    $app->hook('template(opportunity.single.main-content):end', function () use ($app) {
+    $app->hook('template(opportunity.single.main-content):begin', function () use ($app) {
       $opportunityId = $this->controller->requestedEntity->id;
-      $opportunity = $this->controller->requestedEntity;
-      if ($opportunityId == '2852') {
-        echo 'adasdasd';
+      $entity = $this->controller->requestedEntity;
+      if ($opportunityId == '1544') {
+        $this->part('acompanhamento-edital/opportunity-button-acompanhamento-edital', ['entity' => $entity]);
       }
     });
   }
