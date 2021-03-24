@@ -27,12 +27,6 @@ class Auxilio extends EntityController {
     $app->controller('Registration')->registerRegistrationMetadata($opportunity);
   }
 
-    /**
-   * Retorna a oportunidade
-   * 
-   * @return \MapasCulturais\Entities\Opportunity 
-   * @throws Exception 
-   */
   private function getOpportunity() {
     $app = App::i();
     
@@ -51,6 +45,29 @@ class Auxilio extends EntityController {
 
     return $opportunity;
   }
+
+  private function bankData($registration, $return = 'account') {
+        
+    if ($return == 'account') {
+
+        return $registration->registration->owner->metadata['payment_bank_account_number'] ?? null;
+
+    } elseif ($return == 'branch') {
+        
+        return $registration->registration->owner->metadata['payment_bank_branch'] ?? null;
+
+    }  elseif ($return == 'account-type') {
+
+        return $registration->registration->owner->metadata['payment_bank_account_type'] ?? null;
+
+    } elseif ($return == 'bank-number') {
+
+        return $registration->registration->owner->metadata['payment_bank_number'] ?? null;
+
+    }
+    
+    return false;
+    }
 
   private function normalizeString($valor): string {
       $valor = Normalizer::normalize($valor, Normalizer::FORM_D);
@@ -374,12 +391,17 @@ class Auxilio extends EntityController {
 
           },
           'BEN_CODIGO_BANCO' => function ($registrations) use ($detahe2, $detahe1, $dePara, $cpfCsv) {
+              
+
 
               //Verifica se existe o medadado se sim pega o registro
-              if(!($bank = $this->bankData($registrations, 'bank-number'))){
+              if(!($bank = $this->bankData($registrations->registration, 'bank-number'))){
 
                   $field_cpf = $detahe2['BEN_CPF']['field_id'];
-                  $cpfBase = preg_replace('/[^0-9]/i', '',$registrations->$field_cpf);
+                  var_dump($registrations->registration->$field_cpf);
+                  exit;
+                
+                  $cpfBase = preg_replace('/[^0-9]/i', '',$registrations->registration->$field_cpf);
                   
                   $pos = array_search($cpfBase,$cpfCsv);
 
@@ -388,7 +410,7 @@ class Auxilio extends EntityController {
                       
                   }else{
                       $field_id = $detahe1['BEN_CODIGO_BANCO']['field_id'];
-                      $result = $this->numberBank($registrations->$field_id);
+                      $result = $this->numberBank($registrations->registration->$field_id);
                   }
               }else{
                   $result = $bank;
