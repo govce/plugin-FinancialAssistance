@@ -3,8 +3,47 @@
 use MapasCulturais\App;
 use MapasCulturais\i;
 
-$route = App::i()->createUrl('auxilioEventos', 'report', ['id' => $entity->id]);
-$registrations = App::i()->repo('Registration')->findByOpportunityAndUser($entity, $app->user); ?>
+$route = ''; //App::i()->createUrl('acompanhamentoauxilio', 'report', ['id' => $entity->id]);
+$registrations = App::i()->repo('Registration')->findByOpportunityAndUser($entity, $app->user);
+
+$sqlData = " 
+    SELECT *, 
+    RETURN_FILE_ID as resultado,
+    ERROR  as erro,
+    CASE
+        WHEN INSTALLMENT = 1 AND STATUS = 1 THEN 'Pagamento Efetuado!'
+        WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
+    END AS pagamento_1,
+    CASE
+        WHEN INSTALLMENT = 2 AND STATUS = 1 THEN 'Pagamento Efetuado!'
+        WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
+    END AS pagamento_2,
+    CASE
+        WHEN INSTALLMENT = 1 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento efetuado!') 
+        WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento não efetuado.'
+    END AS data_pagamento_1,
+    CASE
+        WHEN INSTALLMENT = 2 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento efetuado!') 
+        WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento não efetuado.'
+    END AS data_pagamento_2
+    from 
+        public.secultce_payment 
+";
+$stmt = $app->em->getConnection()->prepare($sqlData);
+$stmt->execute();
+$data = $stmt->fetchAll();
+$json_array = [];
+foreach ($data as $d) {
+    var_dump($d);
+    die();
+}
+
+
+
+
+?>
+
+
 <div class="tabs-content">
     <?php if ($registrations) : ?>
         <table class="my-registrations">
@@ -88,7 +127,9 @@ $registrations = App::i()->repo('Registration')->findByOpportunityAndUser($entit
         <!-- <input type="date" name="publishDate" id="publishDate"> -->
         <div>
             <label for="mail"><b>Resultado: </b></label>
-            <label for="mail">resultado_input</label>
+            <label for="mail">
+                asdasdasd
+            </label>
         </div>
         <div>
             <label for="mail"><b>Pagamento: </b></label>

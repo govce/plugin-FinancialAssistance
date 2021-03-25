@@ -1388,6 +1388,13 @@ class Auxilio extends EntityController
     {
     }
 
+    private function resultSubscription()
+    {
+        $app = App::i();
+        $aqui = 'teste';
+        return $aqui;
+    }
+
     public function ALL_payment()
     {
         if ($this->data["paymentDate"] === "") {
@@ -1403,6 +1410,11 @@ class Auxilio extends EntityController
         $this->insertNewApproved($this->data["opportunity"]);
 
         $payments = $this->searchPayments($this->data);
+
+        $teste = $this->resultSubscription();
+
+        var_dump($teste);
+        die();
 
         //$success = $this->generateCnab240($payments);
 

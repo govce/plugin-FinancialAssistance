@@ -30,7 +30,7 @@ $route = App::i()->createUrl('paymentauxilio', 'payment');
         <label for="emails">Emails</label>
         <textarea name="emails" id="emails" cols="30" rows="2" placeholder="Separe por ponto e virgula Ex.: meuemail@secult.ce.gob.br;ben.rainir@secult.ce.gob.br"></textarea>
 
-        <input type="hidden" name="opportunity" value="<?= $opportunity->id ?>">
+        <input type="text" name="opportunity" value="<?= $opportunity->id ?>">
         <button class="btn btn-primary download" type="submit">Gerar Pagamento</button>
     </form>
 </edit-box>

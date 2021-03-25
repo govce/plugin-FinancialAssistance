@@ -34,14 +34,15 @@ class Plugin extends \MapasCulturais\Plugin
       }
     });
 
-    //BOTÃO DE VERIFICAÇÃO DE INSCRIÇÃO   
-    $app->hook('template(opportunity.single.main-content):begin', function () use ($app) {
-      $opportunityId = $this->controller->requestedEntity->id;
-      $entity = $this->controller->requestedEntity;
-      if ($opportunityId == '1544') {
-        $this->part('acompanhamento-edital/opportunity-button-acompanhamento-edital', ['entity' => $entity]);
-      }
-    });
+    // //BOTÃO DE VERIFICAÇÃO DE INSCRIÇÃO   
+    // /*$app->hook('template(opportunity.single.main-content):begin', function () use ($app) {
+    //   $opportunityId = $this->controller->requestedEntity->id;
+    //   $entity = $this->controller->requestedEntity;
+    //   if ($opportunityId == '1544') {
+    //     $this->part('singles/opportunity-registrations--user-registrations', ['entity' => $entity]);
+    //     //$this->part('acompanhamento-edital/opportunity-button-acompanhamento-edital', ['entity' => $entity]); opportunity-registrations--user-registrations
+    //   }
+    // });*/
   }
 
 
@@ -50,7 +51,5 @@ class Plugin extends \MapasCulturais\Plugin
     $app = App::i();
 
     $app->registerController('paymentauxilio', 'MapasCulturais\Controllers\Auxilio');
-
-    $app->registerController('acompanhamentoauxilio', 'MapasCulturais\Controllers\AcompanhamentoAuxilio');
   }
 }
