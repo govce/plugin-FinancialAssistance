@@ -6,6 +6,9 @@ use MapasCulturais\i;
 $route = ''; //App::i()->createUrl('acompanhamentoauxilio', 'report', ['id' => $entity->id]);
 $registrations = App::i()->repo('Registration')->findByOpportunityAndUser($entity, $app->user);
 
+$registration_id = $registrations['id'];
+var_dump($registrations);
+die();
 $sqlData = " 
     SELECT *, 
     RETURN_FILE_ID as resultado,
@@ -27,19 +30,18 @@ $sqlData = "
         WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento não efetuado.'
     END AS data_pagamento_2
     from 
-        public.secultce_payment 
+        public.secultce_payment
+    where
+		registration_id = 
 ";
 $stmt = $app->em->getConnection()->prepare($sqlData);
 $stmt->execute();
 $data = $stmt->fetchAll();
 $json_array = [];
 foreach ($data as $d) {
-    var_dump($d);
-    die();
+    //var_dump($d);
+
 }
-
-
-
 
 ?>
 
