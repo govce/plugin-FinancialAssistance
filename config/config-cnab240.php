@@ -572,7 +572,7 @@ return [
         'BEN_CPF' => [ // Field_id do campo do CPF ou CNPJ do beneficiário, se atentar ao respondido no BEN_TIPO_DOC
             'length' => 14,
             'default' => null,
-            'field_id' => 'field_26507',
+            'field_id' => 'field_26519',
             'type' => 'int',
         ],
         'BEN_ENDERECO_LOGRADOURO' => [ // Field_id do campo do logradouro do beneficiário

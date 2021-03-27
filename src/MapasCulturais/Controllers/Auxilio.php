@@ -4,6 +4,7 @@ namespace MapasCulturais\Controllers;
 
 use DateTime;
 use Normalizer;
+use DateInterval;
 use League\Csv\Reader;
 use League\Csv\Writer;
 use League\Csv\Statement;
@@ -13,11 +14,9 @@ use MapasCulturais\Entities\Registration;
 use MapasCulturais\Entities\SecultCEPayment;
 use MapasCulturais\Controllers\EntityController;
 
-class Auxilio extends EntityController
-{
+class Auxilio extends \MapasCulturais\Controllers\Registration {
 
-    public function __construct()
-    {
+  public function __construct() {
         parent::__construct();
 
     $app = App::i();
@@ -25,8 +24,8 @@ class Auxilio extends EntityController
     $this->entityClassName = "\MapasCulturais\Entities\Auxilio";
     $this->config = $app->plugins['RegistrationPaymentsAuxilio']->config;
 
-    $opportunity = $app->repo('Opportunity')->find($this->config["opportunity_id"]);
-    $app->controller('Registration')->registerRegistrationMetadata($opportunity);
+    // $opportunity = $app->repo('Opportunity')->find($this->config["opportunity_id"]);
+    // $app->controller('Registration')->registerRegistrationMetadata($opportunity);
   }
 
   private function getOpportunity() {
@@ -69,7 +68,7 @@ class Auxilio extends EntityController
     }
     
     return false;
-    }
+  }
 
   private function normalizeString($valor): string {
       $valor = Normalizer::normalize($valor, Normalizer::FORM_D);
@@ -123,6 +122,20 @@ class Auxilio extends EntityController
         $data[$key] = $value;
      }
      return $data;
+  }
+
+  private function cpfCsv($filename){
+
+    $results = $this->readingCsvFromTo($filename);
+    
+    $data = [];
+    
+    foreach($results as $key => $value){
+        $data[$key] = $value['CPF'];
+    }
+
+    return $data;
+
   }
 
   private function createString($value) {
@@ -185,7 +198,7 @@ class Auxilio extends EntityController
       return $txt_data;
   }
   
-  private function generateCnab240($payments) {
+  private function generateCnab240($registrations) { 
       ini_set('max_execution_time', 0);
       ini_set('memory_limit', '768M');
 
@@ -204,7 +217,7 @@ class Auxilio extends EntityController
       $opportunity = $this->getOpportunity();
       $opportunity_id = $opportunity->id;
       // $registrations = $this->getRegistrations($opportunity);
-      $registrations = $payments;
+      // $registrations = $payments;
       // $parametersForms = $this->getParametersForms();
       
       /**
@@ -219,6 +232,7 @@ class Auxilio extends EntityController
       $trailer1 = $txt_config['TRAILER1'];
       $trailer2 = $txt_config['TRAILER2'];
       $fromToAccounts = $default['fromToAccounts'];
+
       $dePara = $this->readingCsvFromTo($fromToAccounts);
       $cpfCsv = $this->cpfCsv($fromToAccounts);       
      
@@ -397,22 +411,20 @@ class Auxilio extends EntityController
 
 
               //Verifica se existe o medadado se sim pega o registro
-              if(!($bank = $this->bankData($registrations->registration, 'bank-number'))){
+              if(!($bank = $this->bankData($registrations, 'bank-number'))){
 
                   $field_cpf = $detahe2['BEN_CPF']['field_id'];
-                  var_dump($registrations->registration->$field_cpf);
-                  exit;
                 
-                  $cpfBase = preg_replace('/[^0-9]/i', '',$registrations->registration->$field_cpf);
+                  $cpfBase = preg_replace('/[^0-9]/i', '',$registrations->$field_cpf);
                   
-                  $pos = array_search($cpfBase,$cpfCsv);
+                  $pos = array_search($cpfBase, $cpfCsv);
 
                   if($pos){                    
                       $result = $dePara[$pos]['BEN_NUM_BANCO'];
                       
                   }else{
                       $field_id = $detahe1['BEN_CODIGO_BANCO']['field_id'];
-                      $result = $this->numberBank($registrations->registration->$field_id);
+                      $result = $this->numberBank($registrations->$field_id);
                   }
               }else{
                   $result = $bank;
@@ -722,7 +734,7 @@ class Auxilio extends EntityController
                   'registration' => $registrations->id
               ]);
 
-              return preg_replace('/[^0-9]/i', '',number_format($payment->amount,2,",","."));
+              return preg_replace('/[^0-9]/i', '', number_format(500, 2, ",","."));
           },
           'USO_BANCO_88' => '',
           'USO_BANCO_89' => '',
@@ -1004,8 +1016,9 @@ class Auxilio extends EntityController
               //     continue;
               // }
 
-              if ($this->numberBank($value->registration->$field_banco) == "001") {               
-                  if ($value->registration->$field_TipoConta == "Conta corrente") {
+              if ($this->numberBank($value->$field_banco) == "001") {    
+                 
+                  if ($value->$field_TipoConta[0] === "Conta corrente") {
                       $recordsBBCorrente[] = $value;
                   } else {
                       $recordsBBPoupanca[] = $value;
@@ -1030,9 +1043,6 @@ class Auxilio extends EntityController
       $app->log->info(count($recordsOthers) . " OUTROS BANCOS");
       $app->log->info($noFormoReceipt . " SEM INFORMAÇÃO BANCÁRIA");
       sleep(1);
-
-
-      
       
       //Verifica se existe registros em algum dos arrays. Caso não exista exibe a mensagem
       $validaExist = array_merge($recordsBBCorrente, $recordsOthers, $recordsBBPoupanca);
@@ -1100,7 +1110,7 @@ class Auxilio extends EntityController
               $txt_data .= "\r\n";
 
               $lotBBCorrente += 2;
-              $this->processesPayment($records, $app);
+            //   $this->processesPayment($records, $app);
           }
 
           //treiller 1
@@ -1159,7 +1169,7 @@ class Auxilio extends EntityController
               $txt_data .= "\r\n";
 
               $lotBBPoupanca += 2;
-              $this->processesPayment($records, $app);
+            //   $this->processesPayment($records, $app);
           }
 
           //treiller 1
@@ -1219,7 +1229,7 @@ class Auxilio extends EntityController
               $txt_data = $this->mountTxt($detahe2, $mappedDeletalhe2, $txt_data, $records, $complement, $app);
               $txt_data .= "\r\n";
               $lotOthers += 2;
-              $this->processesPayment($records, $app);
+              // $this->processesPayment($records, $app);
               
 
           }
@@ -1379,6 +1389,36 @@ class Auxilio extends EntityController
     return $payments;
   }
 
+  private function searchRegForPay($payments, $asIterator = false) {
+    $payments_id = [];
+
+    foreach($payments as $pay) {
+        $payments_id[] = $pay->registration->id;
+    }
+
+    $app = App::i();
+
+    $dql = "SELECT r FROM MapasCulturais\\Entities\\Registration r
+        WHERE r.id IN (:payments_id)
+    ";
+
+    $params = [
+        'payments_id' => $payments_id
+    ];
+
+    $query = $app->em->createQuery($dql);
+    $query->setParameters($params);  
+
+    $registrations = $asIterator ? $query->iterate() : $query->getResult();          
+
+    if (!$asIterator && empty($registrations)) {
+        echo "Não foram encontrados registros.";
+        die();
+    }
+
+    return $registrations;
+  }
+
   private function updatePayments($payments) {
     $app = App::i();
     $date_payment = $this->data['paymentDate'];
@@ -1430,23 +1470,33 @@ class Auxilio extends EntityController
 
   public function ALL_payment() {
     if ($this->data["paymentDate"] === "") {
-      echo "Escolha a data de pagamento. Me ajude!!";
-      return;
-    }
-
-    if ($this->data["paymentDate"] === "") {
         echo "Escolha a data de pagamento. Me ajude!!";
         return;
     }
 
+    $app = App::i();
+
+    $opportunity = $app->repo('Opportunity')->find($this->config["opportunity_id"]);
+
     $this->insertNewApproved($this->data["opportunity"]);
 
     $payments = $this->searchPayments($this->data);
+    $registrations = $this->searchRegForPay($payments);
 
-    //$success = $this->generateCnab240($payments);
+    $this->registerRegistrationMetadata($opportunity);
 
-    if (true) { 
-      $this->updatePayments($payments);
-    }
+
+    // foreach($registrations as $r) {
+    //     var_dump($r->field_26519);
+    // }
+
+    // exit;
+
+
+    $success = $this->generateCnab240($registrations);
+
+    // if (true) { 
+    //   $this->updatePayments($payments);
+    // }
   }
 }
