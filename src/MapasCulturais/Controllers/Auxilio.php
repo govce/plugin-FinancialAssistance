@@ -12,6 +12,7 @@ use MapasCulturais\App;
 use MapasCulturais\i;
 use MapasCulturais\Entities\Registration;
 use MapasCulturais\Entities\SecultCEPayment;
+use MapasCulturais\Entities\SecultCEPaymentFile;
 use MapasCulturais\Controllers\EntityController;
 
 class Auxilio extends \MapasCulturais\Controllers\Registration {
@@ -198,7 +199,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
       return $txt_data;
   }
   
-  private function generateCnab240($registrations) { 
+  private function generateCnab240($registrations, $payments) { 
       ini_set('max_execution_time', 0);
       ini_set('memory_limit', '768M');
 
@@ -1268,7 +1269,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
        */
       $file_name = 'cnab240-'.$opportunity_id.'-' . md5(json_encode($txt_data)) . '.txt';
 
-      $dir = PRIVATE_FILES_PATH . 'aldirblanc/inciso1/remessas/cnab240/';
+      $dir = PRIVATE_FILES_PATH . 'auxilioeventos/remessas/cnab240/';
 
       $patch = $dir . $file_name;
 
@@ -1282,11 +1283,20 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
 
       fclose($stream);
 
+      $tmp_file = array(
+        "name" => $file_name,
+        "type" => "text/plain",
+        "tmp_name" => $dir,
+        "path" => "auxilioeventos/remessas/cnab240/" . $file_name,
+        "error" => ""
+      );
+
+      $this->updatePayments($payments, $tmp_file);
+
       header('Content-Type: application/csv');
       header('Content-Disposition: attachment; filename=' . $file_name);
       header('Pragma: no-cache');
       readfile($patch);
-
   }
 
   private function insertNewApproved(int $opportunity_id) {
@@ -1382,6 +1392,9 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
       die();
     }
 
+    var_dump($payments);
+    exit;
+
     // $stmt = $app->em->getConnection()->prepare($query);
     // $stmt->execute();
     // $payments = $stmt->fetchAll();
@@ -1419,49 +1432,87 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
     return $registrations;
   }
 
-  private function updatePayments($payments) {
+  private function updatePayments($payments, $tmp_file) {
     $app = App::i();
-    $date_payment = $this->data['paymentDate'];
+
+    $payment_date = date("Y-m-d H:i:s", strtotime($this->data['paymentDate']));
     $sent_date = date("Y-m-d H:i:s", time());
-    //var_dump($sent_date);
-    //die();
-    //$data_divulgacao = strval($dataHora);
-    $installment = $this->data['installment'];
+    $create_timestamp = date("Y-m-d H:i:s", time());
+
+    $mime_type = $tmp_file["type"];
+    $nameFile = $tmp_file["name"];
+    $md5 = md5_file($tmp_file["tmp_name"]);
+    $path = $tmp_file["path"];
 
     foreach ($payments as $p) {
-        $registration_id = $p['registration_id'];
-        $payment_id = $p['id'];
-        var_dump($registration_id);
-        //die();
+        $payment_id = $p->id;
+
+        $query_insert_file = "
+            INSERT INTO file 
+            (
+                md5, 
+                mime_type, 
+                name, 
+                object_type, 
+                object_id, 
+                create_timestamp, 
+                grp, 
+                description, 
+                parent_id,
+                path,
+                private
+            ) 
+            VALUES 
+            (
+                '$md5',
+                '$mime_type',
+                '$nameFile',
+                'MapasCulturais\Entities\SecultCEPayment',
+                $payment_id,
+                '$create_timestamp',
+                'payment_$payment_id',
+                '',
+                null,
+                '$path',
+                false
+            );
+        ";
+
+        $stmt_file = $app->em->getConnection()->prepare($query_insert_file);
+        $stmt_file->execute();
+
+        $query_select_file = "SELECT max(id) FROM file WHERE object_type = 'MapasCulturais\Entities\SecultCEPayment' AND object_id = $payment_id";
+
+        $stmt_file = $app->em->getConnection()->prepare($query_select_file);
+        $stmt_file->execute();
+        $file = $stmt_file->fetchAll();
+        $file_id = $file[0]['max'];
 
         $query_update = "
                 UPDATE
                     public.secultce_payment
                 SET
-                    status = '1'
-                    --and payment_date = 'NULL' --$date_payment
-                    --and sent_date = 'NULL' --$sent_date          
-                    --and generate_file_date
-                    --and return_date
-                    --and payment_file_id
-                    --and error
+                    status = 2
+                    , payment_date = '$payment_date'
+                    , generate_file_date = '$sent_date'
+                    , sent_date = '$sent_date'          
+                    , payment_file_id = $file_id
                 WHERE
-                    registration_id = $registration_id
-                    and installment = $installment
+                    id = $payment_id;
             ";
+
         $query_insert = "
                 INSERT INTO public.secultce_payment_history
-                    (id, payment_id, file_id, action, result, file_date, payment_date)
+                    (payment_id, file_id, action, result, file_date, payment_date)
                 values
-                    (1, ID.secultce_payment, NULL, NULL, NULL, NULL, NULL)
-            ";
+                    ($payment_id, $file_id, 'gerar', NULL, '$sent_date', '$payment_date');
+        ";
 
         $stmt_update = $app->em->getConnection()->prepare($query_update);
         $stmt_update->execute();
         $stmt_insert = $app->em->getConnection()->prepare($query_insert);
         $stmt_insert->execute();
     }
-    echo 'Inscrições enviadas para pagamento!';
   }
 
   private function sendEmails(string $emails) {
@@ -1485,18 +1536,6 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
 
     $this->registerRegistrationMetadata($opportunity);
 
-
-    // foreach($registrations as $r) {
-    //     var_dump($r->field_26519);
-    // }
-
-    // exit;
-
-
-    $success = $this->generateCnab240($registrations);
-
-    // if (true) { 
-    //   $this->updatePayments($payments);
-    // }
+    $this->generateCnab240($registrations, $payments);
   }
 }

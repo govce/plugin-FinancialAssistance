@@ -57,20 +57,27 @@ return array(
     }
 
     MapasCulturais__try("
+      CREATE SEQUENCE secultce_payment_history_id_seq INCREMENT BY 1 MINVALUE 1 START 1
+    ");
+
+    MapasCulturais__try("
       CREATE TABLE secultce_payment_history (
-        id INT NOT NULL,
+        id SERIAL NOT NULL DEFAULT nextval('secultce_payment_history_id_seq'),
         payment_id INT,
         file_id INT,
         action VARCHAR(255),
         result TEXT,
         file_date TIMESTAMP,
-        payment_date TIMESTAMP
+        payment_date TIMESTAMP,
+
+        PRIMARY KEY (id)
       )    
     ");
 
     MapasCulturais__try("
-      CREATE SEQUENCE secultce_payment_history_id_seq INCREMENT BY 1 MINVALUE 1 START 1
+      ALTER SEQUENCE secultce_payment_history_id_seq OWNED BY secultce_payment_history.id
     ");
+
 
     MapasCulturais__try("
       ALTER TABLE secultce_payment_history ADD CONSTRAINT secultce_payment_history_fk_payment_id FOREIGN KEY (payment_id) REFERENCES secultce_payment (id)
@@ -78,6 +85,10 @@ return array(
 
     MapasCulturais__try("
       ALTER TABLE secultce_payment_history ADD CONSTRAINT secultce_payment_history_fk_file_id FOREIGN KEY (file_id) REFERENCES file (id)
+    ");
+
+    MapasCulturais__try("
+      ALTER TYPE object_type ADD VALUE 'MapasCulturais\Entities\SecultCEPayment'
     ");
   }
 );
