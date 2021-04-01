@@ -1,8 +1,9 @@
 <?php
-    use MapasCulturais\App;
-    use MapasCulturais\i;
 
-    $route = App::i()->createUrl('paymentauxilio', 'payment');
+use MapasCulturais\App;
+use MapasCulturais\i;
+
+$route = App::i()->createUrl('paymentauxilio', 'payment');
 ?>
 
 <!--botão de imprimir-->
