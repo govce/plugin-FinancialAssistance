@@ -3,48 +3,65 @@
 use MapasCulturais\App;
 use MapasCulturais\i;
 
+$app = App::i();
 $route = ''; //App::i()->createUrl('acompanhamentoauxilio', 'report', ['id' => $entity->id]);
-$registrations = App::i()->repo('Registration')->findByOpportunityAndUser($entity, $app->user);
+$registrations = $app->repo('Registration')->findByOpportunityAndUser($entity, $app->user);
 
-$registration_id = $registrations['id'];
-var_dump($registrations);
-die();
+$registration_id = $registrations[0]->id;
+
 $sqlData = " 
-    SELECT *, 
-    RETURN_FILE_ID as resultado,
-    ERROR  as erro,
-    CASE
-        WHEN INSTALLMENT = 1 AND STATUS = 1 THEN 'Pagamento Efetuado!'
-        WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
-    END AS pagamento_1,
-    CASE
-        WHEN INSTALLMENT = 2 AND STATUS = 1 THEN 'Pagamento Efetuado!'
-        WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
-    END AS pagamento_2,
-    CASE
-        WHEN INSTALLMENT = 1 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento efetuado!') 
-        WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento não efetuado.'
-    END AS data_pagamento_1,
-    CASE
-        WHEN INSTALLMENT = 2 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento efetuado!') 
-        WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento não efetuado.'
-    END AS data_pagamento_2
+    SELECT *,
+        CASE
+            WHEN  RETURN_FILE_ID = 3 AND STATUS = 1 THEN 'Pagamento Aprovado!'
+            WHEN  RETURN_FILE_ID = 4 AND STATUS = 0 THEN 'Pagamento Reprovado!'
+            WHEN  RETURN_FILE_ID != 3 OR RETURN_FILE_ID != 4 OR STATUS != 1 OR STATUS != 2 OR  RETURN_FILE_ID IS NULL OR STATUS IS NULL THEN 'Pagamento Pendente.'
+        END as resultado,
+        ERROR  as erro,
+        CASE
+            WHEN INSTALLMENT = 1 AND STATUS = 1 THEN 'Pagamento Efetuado!'
+            WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
+        END AS pagamento_1,
+        CASE
+            WHEN INSTALLMENT = 2 AND STATUS = 1 THEN 'Pagamento Efetuado!'
+            WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
+        END AS pagamento_2,
+        CASE
+            WHEN INSTALLMENT = 1 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento Efetuado!') 
+            WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
+        END AS data_pagamento_1,
+        CASE
+            WHEN INSTALLMENT = 2 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento Efetuado!') 
+            WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
+        END AS data_pagamento_2
     from 
         public.secultce_payment
-    where
-		registration_id = 
+        where
+		registration_id = $registration_id
 ";
 $stmt = $app->em->getConnection()->prepare($sqlData);
 $stmt->execute();
 $data = $stmt->fetchAll();
+
 $json_array = [];
 foreach ($data as $d) {
-    //var_dump($d);
-
+    //$json_array[] = [$d];
+    $json_array[] = [
+        'resultado' => $d['resultado'],
+        'data_pagamento_1' => $d['data_pagamento_1'],
+        'data_pagamento_2' => $d['data_pagamento_2'],
+        'return_file_id' => $d['return_file_id']
+    ];
 }
+$resultado1 = $json_array[0]['resultado'];
+$resultado2 = $json_array[1]['resultado'];
+$data_pagamento_1 = $json_array[0]['data_pagamento_1'];
+$data_pagamento_2 = $json_array[1]['data_pagamento_2'];
+$erro1 = 'asdasdasdasdasdasd';
+$erro2  = '';
+//var_dump($json_array);
 
+//die();
 ?>
-
 
 <div class="tabs-content">
     <?php if ($registrations) : ?>
@@ -128,25 +145,41 @@ foreach ($data as $d) {
         <!-- <label for="publishDate">Data publicação</label> -->
         <!-- <input type="date" name="publishDate" id="publishDate"> -->
         <div>
-            <label for="mail"><b>Resultado: </b></label>
+            <label for="mail"><b>Resultado da 1ª parcela: </b></label>
             <label for="mail">
-                asdasdasd
+                <?php echo ($resultado1) ?>
             </label>
         </div>
+        <div><b>Pagamento da 1ª parcela no valor de R$ 500,00: </b></div>
+        <div><?php echo ('<b>Data e hora: </b>');
+                echo ($data_pagamento_1); ?></div>
+        <br>
         <div>
-            <label for="mail"><b>Pagamento: </b></label>
-            <label for="mail">pagamento_input</label>
+            <label for="mail"><b>Resultado da 2ª parcela: </b></label>
+            <label for="mail">
+                <?php echo ('<b>Data e hora: </b>');
+                echo ($data_pagamento_2); ?>
+            </label>
         </div>
-
-        <label for="mail"><b>Pagamento Parcela 1 R$ 500,00: </b></label>
-        <p>parcela1</p>
-
-        <label for="mail"><b>Pagamento Parcela 2 R$ 500,00: </b></label>
-        <p>parcela2</p>
-
+        <div><b>Pagamento da 2ª parcela no valor de R$ 500,00: </b></div>
+        <div><?php echo ($resultado2) ?></div>
+        <br>
         <div>
-            <label for="mail"><b>Error: </b></label>
-            <label for="mail">error</label>
+            <?php
+            if (($json_array[0]['return_file_id']) == 4) {
+                echo ('<div><b>Error de pagamento da 1ª parcela: </b></div>');
+                echo ('<div>');
+                echo ($erro1);
+                echo ('</div>');
+            } else if (($json_array[0]['return_file_id']) == 4) {
+                echo ('<div><b>Error de pagamento da 2ª parcela: </b></div>');
+                echo ('<div>');
+                echo ($erro1);
+                echo ('</div>');
+            } else {
+                echo ('');
+            }
+            ?>
         </div>
     </form>
 </edit-box>
