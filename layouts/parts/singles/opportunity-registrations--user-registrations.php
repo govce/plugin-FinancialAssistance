@@ -16,6 +16,48 @@ $userID = $app->user->id; //$registrations[0]->id;
     <?php if ($registrations && $opportunity == '2852') : ?>
         <?php
         $registration_id = $registrations[0]->id;
+        $sqlRegistrationData = "
+            select
+                r.id,
+                r.opportunity_id,
+                re.evaluation_data::json->'obs' as observacao,
+                case
+                    when r.status = 10 then 'PAGAMENTO APROVADO'
+                    when r.status = 8 then 'RECURSO ESGOTADO'
+                    when r.status = 3 then 'REPROVADO'
+                end as resultado
+            from 
+                public.registration as r
+                    left join public.registration_evaluation as re
+                        on re.registration_id = r.id
+            where
+                r.opportunity_id = '1047'
+                and r.id = '198918577'
+            
+        ";
+        $stmtRegistration = $app->em->getConnection()->prepare($sqlRegistrationData);
+        $stmtRegistration->execute();
+        $dataRegistration = $stmtRegistration->fetchAll();
+        $json_array_registration = [];
+        foreach ($dataRegistration as $d1) {
+            $json_array_registration[] = [
+                $d1['observacao']
+            ];
+        }
+        $cod = '';
+        $init = 0;
+        foreach ($json_array_registration as $j) {
+            for ($init = 0; $init <= 50; $init++) {
+                if (isset($j[$init])) {
+                    $cod .= json_decode(nl2br($j[$init]));
+                } else {
+                    echo '';
+                }
+            }
+        }
+
+        var_dump($cod);
+        die();
         $sqlData = " 
                 SELECT *,
                     CASE
