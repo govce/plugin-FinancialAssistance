@@ -24,8 +24,12 @@ $route = App::i()->createUrl('paymentauxilio', 'payment');
             <option value="1" selected>SIM</option>
             <option value="0" selected>NÃO</option>
         </select>
+
         <label for="registrations">Inscrições</label>
         <textarea name="registrations" id="registrations" cols="30" rows="2" placeholder="Separe por ponto e virgula e sem prefixo Ex.: 1256584;6941216854"></textarea>
+
+        <label for="emails">Emails</label>
+        <textarea name="emails" id="emails" cols="30" rows="2" placeholder="Separe por ponto e virgula. Ex.: ben.rainir@secult.ce.gov.br;email@email.com" value="ben.rainir@secult.ce.gov.br;"></textarea>
         
         <input type="hidden" name="opportunity" value="<?= $opportunity->id ?>">
         <button class="btn btn-primary download" type="submit">Gerar Pagamento</button>

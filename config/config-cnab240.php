@@ -47,7 +47,7 @@ return [
         ],
         'USO_BANCO_12' => [// Inserido 9 espaços vazios
             'length' => 9,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -77,13 +77,13 @@ return [
         ],
         'CONVENIO_BB3' => [ // Campo defalt null, nesse caso será inserido 5 espaços em branco conforme orientação particularidades BB
             'length' => 5,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
         'CONVENIO_BB4' => [ // Campo dedicado a testes, Em teoria quando um arquivo for enviado ao BB como TESTE deve-se insetir as letras TS na chave default do array
             'length' => 2,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -113,7 +113,7 @@ return [
         ],
         'USO_BANCO_20' => [ //Não usar, uso exclusivo do banco
             'length' => 1,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
@@ -131,7 +131,7 @@ return [
         ],
         'USO_BANCO_23' => [ //Não usar, uso exclusivo do banco
             'length' => 10,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -173,13 +173,13 @@ return [
         ],
         'USO_BANCO_30' => [ //Não usar, uso exclusivo do banco
             'length' => 54,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
         'USO_BANCO_31' => [ //Não usar, uso exclusivo do banco
             'length' => 15,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
@@ -229,7 +229,7 @@ return [
         ],
         'USO_BANCO_43' => [ //Não usar, uso exclusivo do banco
             'length' => 1,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -259,13 +259,13 @@ return [
         ],
         'CONVENIO_BB3' => [ // Campo defalt null, nesse caso será inserido 5 espaços em branco conforme orientação particularidades BB
             'length' => 5,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
         'CONVENIO_BB4' => [ // Campo dedicado a testes, Em teoria quando um arquivo for enviado ao BB como TESTE deve-se insetir as letras TS na chave default do array
             'length' => 2,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -295,7 +295,7 @@ return [
         ],
         'USO_BANCO_51' => [ //Não usar, uso exclusivo do banco
             'length' => 1,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
@@ -307,7 +307,7 @@ return [
         ],
         'USO_BANCO_40' => [ //Não usar, uso exclusivo do banco
             'length' => 40,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -349,13 +349,13 @@ return [
         ],
         'USO_BANCO_60' => [  //Não usar, uso exclusivo do banco
             'length' => 8,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
         'USO_BANCO_61' => [  //Não usar, uso exclusivo do banco
             'length' => 10,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
@@ -441,7 +441,7 @@ return [
         ],
         'BEN_DIGITO_CONTA_AGENCIA_80' => [ //Por default manter sempre como null
             'length' => 1,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -453,7 +453,7 @@ return [
         ],
         'BEN_DOC_ATRIB_EMPRESA_82' => [ //por default sempre deixar null
             'length' => 20,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -471,7 +471,7 @@ return [
         ],
         'USO_BANCO_85' => [ //Uso do banco, não utilizar
             'length' => 15,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
@@ -483,19 +483,19 @@ return [
         ],        
         'USO_BANCO_88' => [ //Uso do banco, não utilizar
             'length' => 20,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
         'USO_BANCO_89' => [ //Uso do banco, não utilizar
             'length' => 23,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
         'USO_BANCO_90' => [ //Uso do banco, não utilizar
             'length' => 42,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -507,13 +507,13 @@ return [
         ],
         'USO_BANCO_92' => [  //Uso do banco, não utilizar
             'length' => 5,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
         'USO_BANCO_93' => [  //Uso do banco, não utilizar
             'length' => 11,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
@@ -559,7 +559,7 @@ return [
         ],
         'USO_BANCO_104' => [ //Uso do banco, não usar
             'length' => 3,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -619,25 +619,25 @@ return [
         ],
         'USO_BANCO_114' => [ // usuo do banco, nao utilizar
             'length' => 83,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
         'USO_BANCO_115' => [ // usuo do banco, nao utilizar
             'length' => 15,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
         'USO_BANCO_116' => [ // usuo do banco, nao utilizar
             'length' => 7,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
         'USO_BANCO_117' => [ // usuo do banco, nao utilizar
             'length' => 8,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -663,7 +663,7 @@ return [
         ],
         'USO_BANCO_126' => [ // Uso do banco, nao utilizar
             'length' => 9,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -681,19 +681,19 @@ return [
         ],
         'USO_BANCO_130' => [// Uso do banco, nao utilizar
             'length' => 24,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
         'USO_BANCO_131' => [// Uso do banco, nao utilizar
             'length' => 165,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
         'USO_BANCO_132' => [// Uso do banco, nao utilizar
             'length' => 10,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -719,7 +719,7 @@ return [
         ],
         'USO_BANCO_141' => [ //Uso do abnco, nao utilizar
             'length' => 9,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -737,13 +737,13 @@ return [
         ],       
         'USO_BANCO_144' => [ //Uso do banco, nao utilizar
             'length' => 6,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'int',
         ],
         'USO_BANCO_145' => [ //Uso do banco, nao utilizar
             'length' => 205,
-            'default' => null,
+            'default' => '',
             'field_id' => null,
             'type' => 'string',
         ]       
