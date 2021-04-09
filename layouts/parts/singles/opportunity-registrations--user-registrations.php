@@ -2,6 +2,7 @@
 
 use MapasCulturais\App;
 use MapasCulturais\i;
+use Psy\Util\Str;
 
 $app = App::i();
 $opportunity = $this->controller->requestedEntity->id;
@@ -16,81 +17,104 @@ $userID = $app->user->id; //$registrations[0]->id;
     <?php if ($registrations && $opportunity == '2852') : ?>
         <?php
         $registration_id = $registrations[0]->id;
+        $asp = '""';
         $sqlRegistrationData = "
             select
-                r.id,
-                r.opportunity_id,
-                re.evaluation_data::json->'obs' as observacao,
+                r.id as id_inscricao,
                 case
-                    when r.status = 10 then 'PAGAMENTO APROVADO'
-                    when r.status = 8 then 'RECURSO ESGOTADO'
-                    when r.status = 3 then 'REPROVADO'
+                    when re.evaluation_data::jsonb->'obs' = '$asp' and re.result = '10' or re.result is null then null
+                    else re.evaluation_data::json->'obs'
+                end as observacao, 
+                re.result as status_insc,
+                case
+                    when re.result = '10' then 'RECURSO APROVADO'
+                    when re.result = '8' then 'RECURSO ESGOTADO'
+                    when re.result = '3' then 'RECURSO REPROVADO'
+                    when re.result = '2' then 'RECURSO REPROVADO'
+                    when re.result is null and re.evaluation_data::jsonb->'obs' <> '$asp'  then 'RECURSO REPROVADO'
+                    when re.result is null and re.evaluation_data::jsonb->'obs' = '$asp'  then 'RECURSO PENDENTE'
+                    when re.result = '1' then 'RECURSO PENDENTE'
                 end as resultado
             from 
                 public.registration as r
-                    left join public.registration_evaluation as re
+                    inner join public.registration_evaluation as re
                         on re.registration_id = r.id
             where
-                r.opportunity_id = '1047'
-                and r.id = '198918577'
-            
+                r.opportunity_id =  2852
+                and r.id = $registration_id
         ";
+
+        //$str = strval($sqlRegistrationData);
         $stmtRegistration = $app->em->getConnection()->prepare($sqlRegistrationData);
         $stmtRegistration->execute();
         $dataRegistration = $stmtRegistration->fetchAll();
-        $json_array_registration = [];
+        $json_array_motivo = [];
+        $json_array_resultado = [];
         foreach ($dataRegistration as $d1) {
-            $json_array_registration[] = [
+            $json_array_motivo[] = [
                 $d1['observacao']
             ];
-        }
-        $cod = '';
+            $json_array_resultado[] = [
+                $d1['resultado'],
+
+            ];
+        };
+        $motivo = '';
         $init = 0;
-        foreach ($json_array_registration as $j) {
+        foreach ($json_array_motivo as $j) {
             for ($init = 0; $init <= 50; $init++) {
                 if (isset($j[$init])) {
-                    $cod .= json_decode(nl2br($j[$init]));
+                    $motivo .= json_decode(nl2br($j[$init]));
                 } else {
                     echo '';
                 }
             }
         }
-
-        var_dump($cod);
-        die();
+        $resultado = '';
+        $init2 = 0;
+        foreach ($json_array_resultado as $j) {
+            for ($init2 = 0; $init2 <= 50; $init2++) {
+                if (isset($j[$init2])) {
+                    if ($j[$init2] == 'RECURSO REPROVADO') {
+                        $resultado .= 'RECURSO REPROVADO';
+                    } else if ($j[$init2] == 'RECURSO APROVADO') {
+                        $resultado .= 'RECURSO APROVADO';
+                    } else if ($j[$init2] == 'RECURSO ESGOTADO') {
+                        $resultado .= 'RECURSO ESGOTADO';
+                    } else if ($j[$init2] == 'RECURSO PENDENTE') {
+                        $resultado .= 'RECURSO PENDENTE';
+                    } else {
+                        echo '';
+                    }
+                } else {
+                    echo '';
+                }
+            }
+        }
         $sqlData = " 
-                SELECT *,
-                    CASE
-                        WHEN  RETURN_FILE_ID = 3 AND STATUS = 1 THEN 'Pagamento Aprovado!'
-                        WHEN  RETURN_FILE_ID = 4 AND STATUS = 0 THEN 'Pagamento Reprovado!'
-                        WHEN  RETURN_FILE_ID != 3 OR RETURN_FILE_ID != 4 OR STATUS != 1 OR STATUS != 2 OR  RETURN_FILE_ID IS NULL OR STATUS IS NULL THEN 'Pagamento Pendente.'
-                    END as resultado,
-                    ERROR  as erro,
-                    CASE
-                        WHEN INSTALLMENT = 1 AND STATUS = 1 THEN 'Pagamento Efetuado!'
-                        WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
-                    END AS pagamento_1,
-                    CASE
-                        WHEN INSTALLMENT = 2 AND STATUS = 1 THEN 'Pagamento Efetuado!'
-                        WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
-                    END AS pagamento_2,
-                    CASE
-                        WHEN INSTALLMENT = 1 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento Efetuado!') 
-                        WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
-                    END AS data_pagamento_1,
-                    CASE
-                        WHEN INSTALLMENT = 2 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento Efetuado!') 
-                        WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
-                    END AS data_pagamento_2
-                from 
-                    public.secultce_payment
-                    where
-                    registration_id = $registration_id
+            SELECT
+                CASE
+                    WHEN  RETURN_FILE_ID = 3 AND STATUS = 1 THEN 'Pagamento Aprovado!'
+                    WHEN  RETURN_FILE_ID = 4 AND STATUS = 0 THEN 'Pagamento Reprovado!'
+                    WHEN  RETURN_FILE_ID != 3 OR RETURN_FILE_ID != 4 OR STATUS != 1 OR STATUS != 2 OR  RETURN_FILE_ID IS NULL OR STATUS IS NULL THEN 'Pagamento Pendente.'
+                END as resultado,
+                ERROR  as erro,
+                CASE
+                    WHEN INSTALLMENT = 1 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento Efetuado!') 
+                    WHEN INSTALLMENT = 1 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
+                END AS data_pagamento_1,
+                CASE
+                    WHEN INSTALLMENT = 2 AND STATUS = 1 THEN CONCAT(PAYMENT_DATE,' - ', 'Pagamento Efetuado!') 
+                    WHEN INSTALLMENT = 2 AND STATUS = 0 THEN 'Pagamento Não Efetuado.'
+                END AS data_pagamento_2
+            from 
+                public.secultce_payment
+                where
+                registration_id = $registration_id
             ";
         $stmt = $app->em->getConnection()->prepare($sqlData);
         $stmt->execute();
         $data = $stmt->fetchAll();
-
         $json_array = [];
         foreach ($data as $d) {
             //$json_array[] = [$d];
@@ -98,19 +122,20 @@ $userID = $app->user->id; //$registrations[0]->id;
                 'resultado' => $d['resultado'],
                 'data_pagamento_1' => $d['data_pagamento_1'],
                 'data_pagamento_2' => $d['data_pagamento_2'],
-                'return_file_id' => $d['return_file_id']
+                'erro' => $d['erro']
             ];
         }
-        $resultado1 = $json_array[0]['resultado'];
-        $resultado2 = $json_array[1]['resultado'];
-        $data_pagamento_1 = $json_array[0]['data_pagamento_1'];
-        $data_pagamento_2 = $json_array[1]['data_pagamento_2'];
-        $erro1 = 'asdasdasdasdasdasd';
-        $erro2  = '';
-        //var_dump($json_array);
-        //die();
-        //$registrations && $data &&
 
+        if ($data == null or isset($data) or  $json_array == null or isset($json_array)) {
+            $motivoPagamento = 'Pagamento não iniciado.';
+        } else {
+            $resultado1 = $json_array[0]['resultado'];
+            $resultado2 = $json_array[1]['resultado'];
+            $data_pagamento_1 = $json_array[0]['data_pagamento_1'];
+            $data_pagamento_2 = $json_array[1]['data_pagamento_2'];
+            $erro_1 = $json_array[0]['erro'];
+            $erro_2 = $json_array[1]['erro'];
+        }
         ?>
         <table class="my-registrations">
             <caption><?php \MapasCulturais\i::_e("Minhas inscrições"); ?></caption>
@@ -189,41 +214,84 @@ $userID = $app->user->id; //$registrations[0]->id;
                 <!-- <label for="publishDate">Data publicação</label> -->
                 <!-- <input type="date" name="publishDate" id="publishDate"> -->
                 <div>
-                    <label for="mail"><b>Resultado da 1ª parcela: </b></label>
+                    <label for="mail"><b>Resultado da Avaliação Técnia: </b></label>
                     <label for="mail">
-                        <?php echo ($resultado1) ?>
+                        <?php echo ($resultado) ?>
                     </label>
                 </div>
-                <div><b>Pagamento da 1ª parcela no valor de R$ 500,00: </b></div>
-                <div><?php echo ('<b>Data e hora: </b>');
-                        echo ($data_pagamento_1); ?></div>
-                <br>
                 <div>
-                    <label for="mail"><b>Resultado da 2ª parcela: </b></label>
-                    <label for="mail">
-                        <?php echo ('<b>Data e hora: </b>');
-                        echo ($data_pagamento_2); ?>
-                    </label>
-                </div>
-                <div><b>Pagamento da 2ª parcela no valor de R$ 500,00: </b></div>
-                <div><?php echo ($resultado2) ?></div>
-                <br>
-                <div>
-                    <?php
-                    if (($json_array[0]['return_file_id']) == 4) {
-                        echo ('<div><b>Error de pagamento da 1ª parcela: </b></div>');
-                        echo ('<div>');
-                        echo ($erro1);
-                        echo ('</div>');
-                    } else if (($json_array[0]['return_file_id']) == 4) {
-                        echo ('<div><b>Error de pagamento da 2ª parcela: </b></div>');
-                        echo ('<div>');
-                        echo ($erro1);
-                        echo ('</div>');
-                    } else {
-                        echo ('');
-                    }
-                    ?>
+                    <?php if ($resultado == 'RECURSO REPROVADO') : ?>
+                        <div><b>Motivo: </b></div>
+                        <div>
+                            <?php echo ($motivo) ?>
+                        </div>
+                    <?php elseif ($resultado == 'RECURSO ESGOTADO') : ?>
+                        <div><b>Motivo: </b></div>
+                        <div>
+                            <?php echo ($motivo) ?>
+                        </div>
+                    <?php elseif ($resultado == 'RECURSO PENDENTE') : ?>
+                        <div><b>Motivo: </b></div>
+                        <div>
+                            <?php echo ($motivo) ?>
+                        </div>
+                    <?php elseif ($resultado == 'RECURSO APROVADO') : ?>
+                        <?php if (($data == null or isset($data) == null) && $resultado == 'RECURSO REPROVADO') : ?>
+                            <div></div>
+                        <?php elseif (($data == null or isset($data) == null) && $resultado == 'RECURSO APROVADO') : ?>
+                            <div></div>
+                        <?php elseif (($data == null or isset($data) == null) && $resultado == 'RECURSO ESGOTADO') : ?>
+                            <div></div>
+                        <?php elseif (($data == null or isset($data) == null) && $resultado == 'RECURSO PENDENTE') : ?>
+                            <div></div>
+                        <?php elseif ($resultado == 'RECURSO APROVADO' && $data != null) : ?>
+                            <br>
+                            <div>
+                                <label for="mail"><b>Resultado da 1ª parcela: </b></label>
+                                <label for="mail">
+                                    <?php
+                                    echo ($json_array[0]['resultado'])
+                                    ?>
+                                </label>
+                            </div>
+                            <div><b>Pagamento da 1ª parcela no valor de R$ 500,00: </b></div>
+                            <div><?php echo ('<b>Data e hora: </b>');
+                                    echo ($json_array[0]['data_pagamento_1']); ?></div>
+                            <br>
+                            <div>
+                                <label for="mail"><b>Resultado da 2ª parcela: </b></label>
+                                <label for="mail">
+                                    <?php
+                                    echo ($json_array[0]['resultado'])
+                                    ?>
+
+                                </label>
+                            </div>
+                            <div><b>Pagamento da 2ª parcela no valor de R$ 500,00: </b></div>
+                            <div> <?php echo ('<b>Data e hora: </b>');
+                                    echo ($json_array[1]['data_pagamento_2']); ?></div>
+                            <br>
+                            <div>
+                                <?php if (isset($json_array[0]['erro'])) : ?>
+                                    <div><b>Error de pagamento da 1ª parcela: </b></div>
+                                    <div>
+                                        <?php echo ('<b>Motivo: </b>');
+                                        echo ($json_array[0]['erro']) ?>
+                                    </div>
+                                <?php elseif (isset($json_array[1]['erro'])) : ?>
+                                    <div><b>Error de pagamento da 2ª parcela: </b></div>
+                                    <div>
+                                        <?php echo ('<b>Motivo: </b>');
+                                        echo ($json_array[1]['erro']) ?>
+                                    </div>
+                                <?php else : ?>
+                                    <div></div>
+                                <?php endif; ?>
+                            </div>
+                        <?php else : ?>
+                            <div></div>
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
             </form>
         </edit-box>
