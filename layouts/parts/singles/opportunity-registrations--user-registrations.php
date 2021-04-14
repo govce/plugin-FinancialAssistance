@@ -14,6 +14,8 @@ $userID = $app->user->id; //$registrations[0]->id;
 ?>
 
 <div class="tabs-content">
+
+    <!-------------- STATUS DE ACOMPANHAMENTO DE PAGAMENTO POR INSCRIÇÃO ------------------>
     <?php if ($registrations && $opportunity == '2852') : ?>
         <?php
         $registration_id = $registrations[0]->id;
@@ -153,6 +155,9 @@ $userID = $app->user->id; //$registrations[0]->id;
                     <th class="registration-status-col">
                         <?php \MapasCulturais\i::_e("Resultado"); ?>
                     </th>
+                    <th class="registration-status-col">
+                        <?php \MapasCulturais\i::_e("Dados Bacários"); ?>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -162,10 +167,13 @@ $userID = $app->user->id; //$registrations[0]->id;
                     <tr>
                         <?php $this->applyTemplateHook('user-registration-table--registration', 'begin', $reg_args); ?>
                         <td class="registration-id-col">
+
                             <?php $this->applyTemplateHook('user-registration-table--registration--number', 'begin', $reg_args); ?>
                             <a href="<?php echo $registration->singleUrl ?>"><?php echo $registration->number ?></a>
                             <?php $this->applyTemplateHook('user-registration-table--registration--number', 'end', $reg_args); ?>
                         </td>
+
+
                         <td class="registration-agents-col">
                             <?php $this->applyTemplateHook('user-registration-table--registration--agents', 'begin', $reg_args); ?>
                             <p>
@@ -186,6 +194,9 @@ $userID = $app->user->id; //$registrations[0]->id;
                             <?php endforeach; ?>
                             <?php $this->applyTemplateHook('user-registration-table--registration--agents', 'end', $reg_args); ?>
                         </td>
+
+
+
                         <td class="registration-status-col">
                             <?php $this->applyTemplateHook('user-registration-table--registration--status', 'begin', $reg_args); ?>
                             <?php if ($registration->status > 0) : ?>
@@ -204,11 +215,22 @@ $userID = $app->user->id; //$registrations[0]->id;
                             <?php $this->applyTemplateHook('user-registration-table--registration--status', 'end', $reg_args); ?>
                         </td>
                         <?php $this->applyTemplateHook('user-registration-table--registration', 'end', $reg_args); ?>
+
+
+                        <td class="registration-status-col">
+                            <?php $this->applyTemplateHook('user-registration-table--registration--status', 'begin', $reg_args); ?>
+                            <br>
+                            <a class="btn btn-small btn-primary" ng-click="editbox.open('report-evaluation-auxilioEventos-options-dados', $event)" rel="noopener noreferrer">Ver Dados</a>
+                            <?php $this->applyTemplateHook('user-registration-table--registration--status', 'end', $reg_args); ?>
+                        </td>
+                        <?php $this->applyTemplateHook('user-registration-table--registration', 'end', $reg_args); ?>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-        <!-- Formulário -->
+
+
+        <!-- BOTÃO DE ACOMPANHAMENTO AUXILIO -->
         <edit-box id="report-evaluation-auxilioEventos-options" position="top" title="<?php i::esc_attr_e('Resultado da Inscrição') ?>" cancel-label="Ok" close-on-cancel="true">
             <form class="form-report-evaluation-auxilioEventos-options" action="<?= $route ?>" method="GET">
                 <!-- <label for="publishDate">Data publicação</label> -->
@@ -303,6 +325,25 @@ $userID = $app->user->id; //$registrations[0]->id;
                 </div>
             </form>
         </edit-box>
+
+        <!-- BOTÃO DE EDIÇÃO E VISUALIZAÇÃO DE DADOS BANCÁRIOS -->
+        <edit-box id="report-evaluation-auxilioEventos-options-dados" position="top" title="<?php i::esc_attr_e('Visualizar e Editar Dados Bancários') ?>" cancel-label="Ok" close-on-cancel="true">
+            <form class="form-report-evaluation-auxilioEventos-options-dados" action="<?= $route ?>" method="GET">
+                <!-- <label for="publishDate">Data publicação</label> -->
+                <!-- <input type="date" name="publishDate" id="publishDate"> -->
+                <div>
+                    <label for="mail"><b>Visualizar e Editar Dados Bancários</b></label>
+                    <label for="mail">
+                        <?php echo 'DADOS BANCÁRIOS' ?>
+                    </label>
+                </div>
+                <div>
+
+                </div>
+            </form>
+        </edit-box>
+
+        <!-------------- TAB SEM OS BOTÕES DO EDITAIS ------------------>
     <?php else : ?>
         <?php if ($registrations) : ?>
             <table class="my-registrations">

@@ -34,6 +34,11 @@ class Plugin extends \MapasCulturais\Plugin
       }
     });
 
+    $app->hook('teplate(opportunity.single.user-registration-table--registration):begin', function () use ($plugin, $app) {
+      echo 'AQUI';
+    });
+
+
     // //BOTÃO DE VERIFICAÇÃO DE INSCRIÇÃO   
     // /*$app->hook('template(opportunity.single.main-content):begin', function () use ($app) {
     //   $opportunityId = $this->controller->requestedEntity->id;
