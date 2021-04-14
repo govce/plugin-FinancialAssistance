@@ -76,13 +76,13 @@ $userID = $app->user->id; //$registrations[0]->id;
             for ($init2 = 0; $init2 <= 50; $init2++) {
                 if (isset($j[$init2])) {
                     if ($j[$init2] == 'RECURSO REPROVADO') {
-                        $resultado .= 'RECURSO REPROVADO';
+                        $resultado = 'RECURSO REPROVADO';
                     } else if ($j[$init2] == 'RECURSO APROVADO') {
-                        $resultado .= 'RECURSO APROVADO';
+                        $resultado = 'RECURSO APROVADO';
                     } else if ($j[$init2] == 'RECURSO ESGOTADO') {
-                        $resultado .= 'RECURSO ESGOTADO';
+                        $resultado = 'RECURSO ESGOTADO';
                     } else if ($j[$init2] == 'RECURSO PENDENTE') {
-                        $resultado .= 'RECURSO PENDENTE';
+                        $resultado = 'RECURSO PENDENTE';
                     } else {
                         echo '';
                     }
@@ -237,13 +237,21 @@ $userID = $app->user->id; //$registrations[0]->id;
                         </div>
                     <?php elseif ($resultado == 'RECURSO APROVADO') : ?>
                         <?php if (($data == null or isset($data) == null) && $resultado == 'RECURSO REPROVADO') : ?>
-                            <div></div>
+                            <div>
+                                <?php echo '' ?>
+                            </div>
                         <?php elseif (($data == null or isset($data) == null) && $resultado == 'RECURSO APROVADO') : ?>
-                            <div></div>
+                            <div>
+                                <?php echo '' ?>
+                            </div>
                         <?php elseif (($data == null or isset($data) == null) && $resultado == 'RECURSO ESGOTADO') : ?>
-                            <div></div>
+                            <div>
+                                <?php echo '' ?>
+                            </div>
                         <?php elseif (($data == null or isset($data) == null) && $resultado == 'RECURSO PENDENTE') : ?>
-                            <div></div>
+                            <div>
+                                <?php echo '' ?>
+                            </div>
                         <?php elseif ($resultado == 'RECURSO APROVADO' && $data != null) : ?>
                             <br>
                             <div>
