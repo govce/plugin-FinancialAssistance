@@ -54,41 +54,41 @@ $userID = $app->user->id; //$registrations[0]->id;
         $motivo_inscricao = $dataRegistration[0]['motivo'];
 
         //CONSULTA DE RESULTADO DO PAGAMENTO DO AUXILIO
-        $sqlData = " 
-            SELECT
-                CASE
-                    WHEN STATUS IS NULL OR STATUS < 3 THEN 'Pagamento Pendente'
-                    WHEN STATUS = 3 THEN 'Pagamento Aprovado'
-                    WHEN STATUS = 4 THEN 'Pagamento Reprovado'
-                    ELSE
-                        'Pagamento Pendente'
-                END as resultado,
-                ERROR as erro,
-                INSTALLMENT as parcela,
-                PAYMENT_DATE as dt_pagamento,
-                value as valor_pagamento
-            FROM 
-                public.secultce_payment
-                where
-                registration_id = $registration_id
-            order by INSTALLMENT
-            ";
-        $stmt = $app->em->getConnection()->prepare($sqlData);
-        $stmt->execute();
-        $data = $stmt->fetchAll();
-        function parcela($indice_parcela, $data)
-        {
-            return array(
-                'resultado_parcela' => $data[$indice_parcela]['resultado'],
-                'valor_parcela' => $data[$indice_parcela]['valor_pagamento'],
-                'numero_parcela' => $data[$indice_parcela]['parcela'],
-                'data_pagamento' => $data[$indice_parcela]['dt_pagamento'],
-                'error_pagamento' => $data[$indice_parcela]['erro']
-            );
-        };
-        $list[] = parcela(0, $data);
-        var_dump(parcela(0, $data));
-        die();
+        // $sqlData = " 
+        //     SELECT
+        //         CASE
+        //             WHEN STATUS IS NULL OR STATUS < 3 THEN 'Pagamento Pendente'
+        //             WHEN STATUS = 3 THEN 'Pagamento Aprovado'
+        //             WHEN STATUS = 4 THEN 'Pagamento Reprovado'
+        //             ELSE
+        //                 'Pagamento Pendente'
+        //         END as resultado,
+        //         ERROR as erro,
+        //         INSTALLMENT as parcela,
+        //         PAYMENT_DATE as dt_pagamento,
+        //         value as valor_pagamento
+        //     FROM 
+        //         public.secultce_payment
+        //         where
+        //         registration_id = $registration_id
+        //     order by INSTALLMENT
+        //     ";
+        // $stmt = $app->em->getConnection()->prepare($sqlData);
+        // $stmt->execute();
+        // $data = $stmt->fetchAll();
+        // function parcela($indice_parcela, $data)
+        // {
+        //     return array(
+        //         'resultado_parcela' => $data[$indice_parcela]['resultado'],
+        //         'valor_parcela' => $data[$indice_parcela]['valor_pagamento'],
+        //         'numero_parcela' => $data[$indice_parcela]['parcela'],
+        //         'data_pagamento' => $data[$indice_parcela]['dt_pagamento'],
+        //         'error_pagamento' => $data[$indice_parcela]['erro']
+        //     );
+        // };
+        // $list[] = parcela(0, $data);
+        // var_dump(parcela(0, $data));
+        // die();
         // $valor_parcela = 
         // $resultado_parcela = $data[0]['resultado'];
         // $data_pg_parcela_1 = 
