@@ -50,15 +50,19 @@ return array(
       ALTER TABLE secultce_payment ADD CONSTRAINT secultce_payment_fk_return_file_id FOREIGN KEY (return_file_id) REFERENCES file (id)
     ");
   },
-  'create table secultce_payments_history' => function() use($conn){
-    if (MapasCulturais__table_exists("secultce_payments_history")) {
-      echo "TABLE secultce_payments_history ALREADY EXISTS";
+  'create table secultce_payment_history' => function() use($conn){
+    if (MapasCulturais__table_exists("secultce_payment_history")) {
+      echo "TABLE secultce_payment_history ALREADY EXISTS";
       return true;
     }
 
     MapasCulturais__try("
+      CREATE SEQUENCE secultce_payment_history_id_seq INCREMENT BY 1 MINVALUE 1 START 1
+    ");
+
+    MapasCulturais__try("
       CREATE TABLE secultce_payment_history (
-        id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
         payment_id INT,
         file_id INT,
         action VARCHAR(255),
@@ -69,8 +73,9 @@ return array(
     ");
 
     MapasCulturais__try("
-      CREATE SEQUENCE secultce_payment_history_id_seq INCREMENT BY 1 MINVALUE 1 START 1
+      ALTER SEQUENCE secultce_payment_history_id_seq OWNED BY secultce_payment_history.id
     ");
+
 
     MapasCulturais__try("
       ALTER TABLE secultce_payment_history ADD CONSTRAINT secultce_payment_history_fk_payment_id FOREIGN KEY (payment_id) REFERENCES secultce_payment (id)
@@ -78,6 +83,10 @@ return array(
 
     MapasCulturais__try("
       ALTER TABLE secultce_payment_history ADD CONSTRAINT secultce_payment_history_fk_file_id FOREIGN KEY (file_id) REFERENCES file (id)
+    ");
+
+    MapasCulturais__try("
+      ALTER TYPE object_type ADD VALUE 'MapasCulturais\Entities\SecultCEPayment'
     ");
   }
 );
