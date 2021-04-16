@@ -260,7 +260,8 @@ $userID = $app->user->id; //$registrations[0]->id;
                                             ?>
                                         </label>
                                     </div>
-                                <?php elseif (isset($data[0]['erro_pg_2'])) : ?>
+                                <?php endif; ?>
+                                <?php if (isset($data[0]['erro_pg_2'])) : ?>
                                     <div><b>Erro de pagamento da 2ª parcela: </b></div>
                                     <div>
                                         <label>
@@ -270,8 +271,6 @@ $userID = $app->user->id; //$registrations[0]->id;
                                             ?>
                                         </label>
                                     </div>
-                                <?php else : ?>
-                                    <div></div>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
