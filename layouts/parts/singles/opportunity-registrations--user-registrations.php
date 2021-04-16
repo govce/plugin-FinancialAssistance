@@ -20,30 +20,30 @@ $userID = $app->user->id; //$registrations[0]->id;
         //CONSULTA DO RESULTADO DE AVALIAÇÃO DE INSCRICÃO
         $asp = '"';
         $sqlRegistrationData = "
-            select
-                r.id as id_inscricao,
-                (
-                    SELECT string_agg(REPLACE(to_json(re.evaluation_data::jsonb->'obs')::TEXT,'$asp',''), '. ')
-                    FROM registration_evaluation re
-                    WHERE re.result <> '10' 
-                    --AND re.registration_id IN (select id from registration where opportunity_id = 2852 and status = 3)
-                    AND re.registration_id = r.id
-                    GROUP BY re.registration_id
-                ) as motivo,
-                r.status as status_insc,
-                case
-                    when r.status = 10 then 'RECURSO APROVADO'
-                    when r.status = 8 then 'RECURSO ESGOTADO'
-                    when r.status = 3 then 'RECURSO REPROVADO'
-                    when r.status = 2 then 'RECURSO REPROVADO'
-                    when r.status = 1 or r.status = 0 then 'RECURSO REPROVADO'
-                end as resultado
-            from 
-                public.registration as r
-            where
-                r.opportunity_id =  2852
-                and r.id = $registration_id
-        ";
+                select
+                    r.id as id_inscricao,
+                    (
+                        SELECT string_agg(REPLACE(to_json(re.evaluation_data::jsonb->'obs')::TEXT,'$asp',''), '. ')
+                        FROM registration_evaluation re
+                        WHERE re.result <> '10' 
+                        --AND re.registration_id IN (select id from registration where opportunity_id = 2852 and status = 3)
+                        AND re.registration_id = r.id
+                        GROUP BY re.registration_id
+                    ) as motivo,
+                    r.status as status_insc,
+                    case
+                        when r.status = 10 then 'RECURSO APROVADO'
+                        when r.status = 8 then 'RECURSO ESGOTADO'
+                        when r.status = 3 then 'RECURSO REPROVADO'
+                        when r.status = 2 then 'RECURSO REPROVADO'
+                        when r.status = 1 or r.status = 0 then 'RECURSO REPROVADO'
+                    end as resultado
+                from 
+                    public.registration as r
+                where
+                    r.opportunity_id =  2852
+                    and r.id = $registration_id
+            ";
 
         //$str = strval($sqlRegistrationData);
         $stmtRegistration = $app->em->getConnection()->prepare($sqlRegistrationData);
@@ -54,66 +54,47 @@ $userID = $app->user->id; //$registrations[0]->id;
         $motivo_inscricao = $dataRegistration[0]['motivo'];
 
         //CONSULTA DE RESULTADO DO PAGAMENTO DO AUXILIO
-        // $sqlData = " 
-        //     SELECT
-        //         CASE
-        //             WHEN STATUS IS NULL OR STATUS < 3 THEN 'Pagamento Pendente'
-        //             WHEN STATUS = 3 THEN 'Pagamento Aprovado'
-        //             WHEN STATUS = 4 THEN 'Pagamento Reprovado'
-        //             ELSE
-        //                 'Pagamento Pendente'
-        //         END as resultado,
-        //         ERROR as erro,
-        //         INSTALLMENT as parcela,
-        //         PAYMENT_DATE as dt_pagamento,
-        //         value as valor_pagamento
-        //     FROM 
-        //         public.secultce_payment
-        //         where
-        //         registration_id = $registration_id
-        //     order by INSTALLMENT
-        //     ";
-        // $stmt = $app->em->getConnection()->prepare($sqlData);
-        // $stmt->execute();
-        // $data = $stmt->fetchAll();
-        // function parcela($indice_parcela, $data)
-        // {
-        //     return array(
-        //         'resultado_parcela' => $data[$indice_parcela]['resultado'],
-        //         'valor_parcela' => $data[$indice_parcela]['valor_pagamento'],
-        //         'numero_parcela' => $data[$indice_parcela]['parcela'],
-        //         'data_pagamento' => $data[$indice_parcela]['dt_pagamento'],
-        //         'error_pagamento' => $data[$indice_parcela]['erro']
-        //     );
-        // };
-        // $list[] = parcela(0, $data);
-        // var_dump(parcela(0, $data));
-        // die();
-        // $valor_parcela = 
-        // $resultado_parcela = $data[0]['resultado'];
-        // $data_pg_parcela_1 = 
+        $sqlData = " 
+                SELECT
+                    CASE
+                        WHEN sp1.STATUS IS NULL OR sp1.STATUS < 3 THEN 'PENDENTE'
+                        WHEN sp1.STATUS = 3 THEN 'APROVADO'
+                        WHEN sp1.STATUS = 4 THEN 'REPROVADO'
+                        ELSE
+                            'PENDENTE'
+                    END as resultado_pg_1,
+                    sp1.ERROR as erro_pg_1,
+                    sp1.INSTALLMENT as parcela_pg_1,
+                    sp1.PAYMENT_DATE as data_pg_1,
+                    sp1.value as valor_pg_1,
+                    CASE
+                        WHEN sp2.STATUS IS NULL OR sp2.STATUS < 3 THEN 'PENDENTE'
+                        WHEN sp2.STATUS = 3 THEN 'APROVADO'
+                        WHEN sp2.STATUS = 4 THEN 'REPROVADO'
+                        ELSE
+                            'PENDENTE'
+                    END as resultado_pg_2,
+                    sp2.ERROR as erro_pg_2,
+                    sp2.INSTALLMENT as parcela_pg_2,
+                    sp2.PAYMENT_DATE as data_pg_2,
+                    sp2.value as valor_pg_2
+                
+                FROM 
+                    public.secultce_payment as sp1
+                        left join public.secultce_payment as sp2
+                            on sp1.registration_id =  sp2.registration_id
+                            and sp2.installment = 2
+                where
+                    sp1.registration_id = $registration_id
+                    and sp1.installment = 1
+                order by 
+                    sp1.INSTALLMENT
+            ";
+        $stmt = $app->em->getConnection()->prepare($sqlData);
+        $stmt->execute();
+        $data = $stmt->fetchAll();
 
-        // $json_array = [];
-        // foreach ($data as $d) {
-        //     //$json_array[] = [$d];
-        //     $json_array[] = [
-        //         'resultado' => $d['resultado'],
-        //         'data_pagamento_1' => $d['data_pagamento_1'],
-        //         'data_pagamento_2' => $d['data_pagamento_2'],
-        //         'erro' => $d['erro']
-        //     ];
-        // }
 
-        // if ($data == null or isset($data) or  $json_array == null or isset($json_array)) {
-        //     $motivoPagamento = 'Pagamento não iniciado.';
-        // } else {
-        //     $resultado1 = $json_array[0]['resultado'];
-        //     $resultado2 = $json_array[1]['resultado'];
-        //     $data_pagamento_1 = $json_array[0]['data_pagamento_1'];
-        //     $data_pagamento_2 = $json_array[1]['data_pagamento_2'];
-        //     $erro_1 = $json_array[0]['erro'];
-        //     $erro_2 = $json_array[1]['erro'];
-        // }
         ?>
         <table class="my-registrations">
             <caption><?php \MapasCulturais\i::_e("Minhas inscrições"); ?></caption>
@@ -190,84 +171,109 @@ $userID = $app->user->id; //$registrations[0]->id;
         <!-- Formulário -->
         <edit-box id="report-evaluation-auxilioEventos-options" position="top" title="<?php i::esc_attr_e('Resultado da Inscrição') ?>" cancel-label="Ok" close-on-cancel="true">
             <form class="form-report-evaluation-auxilioEventos-options" action="<?= $route ?>" method="GET">
-                <!-- <label for="publishDate">Data publicação</label> -->
-                <!-- <input type="date" name="publishDate" id="publishDate"> -->
                 <div>
                     <div>
-                        <label><b>Resultado da Avaliação Técnia: </b></label>
-                        <label>
-                            <?php echo ("<p>");
-                            echo ($resultado_inscricao);
-                            echo ("</p>");
-                            ?>
-                        </label>
+                        <?php echo ("<b>Resultado: </b>");
+                        echo ($resultado_inscricao);
+                        ?>
                     </div>
                     <div>
-                        <?php if ($status_inscricao < '10' && ($motivo_inscricao == null || $motivo_inscricao == "")) : ?>
+                        <?php if ($status_inscricao < '10') : ?>
                             <div>
-                                <label><b>Motivo: </b></label>
                                 <label>
-                                    <?php echo ("<p>");
-                                    echo ("mensagem de motivo padrão");
-                                    echo ("</p>");
-                                    ?>
-                                </label>
-                            </div>
-                        <?php elseif ($status_inscricao < '10' && ($motivo_inscricao != null || $motivo_inscricao != "")) : ?>
-                            <div>
-                                <label><b>Motivo: </b></label>
-                                <label>
-                                    <?php echo ("<p>");
-                                    echo ($motivo_inscricao);
-                                    echo ("</p>");
+                                    <?php
+                                    if ($motivo_inscricao == null || $motivo_inscricao == "") {
+                                        echo ("<p><b>Motivo: </b>");
+                                        echo ("Mensagem padrão");
+                                        echo ("</p>");
+                                    } else {
+                                        echo ("<p><b>Motivo: </b>");
+                                        echo ($motivo_inscricao);
+                                        echo ("</p>");
+                                    }
                                     ?>
                                 </label>
                             </div>
                         <?php else : ?>
-                            <?php if (true) : ?>
-                                <br>
+                            <?php if ((empty($data[0]['resultado_pg_1']) == false && empty($data[0]['data_pg_1']) == false) && $status_inscricao >= '10') : ?>
                                 <div>
-                                    <label for="mail"><b>Resultado da 1ª parcela: </b></label>
-                                    <label for="mail">
-                                        <?php
-                                        echo ($json_array[0]['resultado'])
-                                        ?>
-                                    </label>
+                                    <b>Resultado do Pagamento da 1ª parcela no valor de R$ 500,00: </b>
                                 </div>
-                                <div><b>Pagamento da 1ª parcela no valor de R$ 500,00: </b></div>
-                                <div><?php echo ('<b>Data e hora: </b>');
-                                        echo ($json_array[0]['data_pagamento_1']); ?></div>
-                                <br>
                                 <div>
-                                    <label for="mail"><b>Resultado da 2ª parcela: </b></label>
-                                    <label for="mail">
-                                        <?php
-                                        echo ($json_array[0]['resultado'])
-                                        ?>
-                                    </label>
+                                    <?php echo ("<b>Status do Pagamento: </b>");
+                                    echo ($data[0]['resultado_pg_1']);
+                                    ?>
                                 </div>
-                                <div><b>Pagamento da 2ª parcela no valor de R$ 500,00: </b></div>
-                                <div> <?php echo ('<b>Data e hora: </b>');
-                                        echo ($json_array[1]['data_pagamento_2']); ?></div>
+                                <div><?php echo ('<b>Data e Hora do Pagamento: </b>');
+                                        echo ($data[0]['data_pg_1']); ?>
+                                </div>
+                            <?php elseif ((empty($data[0]['resultado_pg_1']) == true && empty($data[0]['data_pg_1']) == true) && $status_inscricao >= '10') : ?>
                                 <br>
                                 <div>
-                                    <?php if (isset($json_array[0]['erro'])) : ?>
-                                        <div><b>Error de pagamento da 1ª parcela: </b></div>
-                                        <div>
-                                            <?php echo ('<b>Motivo: </b>');
-                                            echo ($json_array[0]['erro']) ?>
-                                        </div>
-                                    <?php elseif (isset($json_array[1]['erro'])) : ?>
-                                        <div><b>Error de pagamento da 2ª parcela: </b></div>
-                                        <div>
-                                            <?php echo ('<b>Motivo: </b>');
-                                            echo ($json_array[1]['erro']) ?>
-                                        </div>
-                                    <?php else : ?>
-                                        <div></div>
-                                    <?php endif; ?>
+                                    <b>Resultado do Pagamento da 1ª parcela no valor de R$ 500,00: </b>
+                                </div>
+                                <div>
+                                    <?php echo ("<b>Status do Pagamento: </b>");
+                                    echo ("PENDENTE");
+                                    ?>
+                                </div>
+                                <div><?php echo ('<b>Data e Hora do Pagamento: </b>');
+                                        echo ("PENDENTE"); ?>
                                 </div>
                             <?php endif; ?>
+                            <?php if ((empty($data[0]['resultado_pg_2']) == false && empty($data[0]['data_pg_2']) == false) && $status_inscricao >= '10') : ?>
+                                <br>
+                                <div>
+                                    <b>Resultado do Pagamento da 2ª parcela no valor de R$ 500,00: </b>
+                                </div>
+                                <div>
+                                    <?php echo ("<b>Status do Pagamento: </b>");
+                                    echo ($data[0]['resultado_pg_2']);
+                                    ?>
+                                </div>
+                                <div><?php echo ('<b>Data e Hora do Pagamento: </b>');
+                                        echo ($data[0]['data_pg_2']); ?>
+                                </div>
+                            <?php elseif (empty($data[0]['resultado_pg_2']) == true && empty($data[0]['data_pg_2']) == true && $status_inscricao >= '10') : ?>
+                                <br>
+                                <div>
+                                    <b>Resultado do Pagamento da 2ª parcela no valor de R$ 500,00: </b>
+                                </div>
+                                <div>
+                                    <?php echo ("<b>Status do Pagamento: </b>");
+                                    echo ("PENDENTE");
+                                    ?>
+                                </div>
+                                <div><?php echo ('<b>Data e Hora do Pagamento: </b>');
+                                        echo ("PENDENTE"); ?>
+                                </div>
+                            <?php endif; ?>
+                            <br>
+                            <div>
+                                <?php if (isset($data[0]['erro_pg_1'])) : ?>
+                                    <div><b>Error de pagamento da 1ª parcela: </b></div>
+                                    <div>
+                                        <label>
+                                            <?php echo ("<p><b>Motivo: </b>");
+                                            echo ($data[0]['erro_pg_1']);
+                                            echo ("</p>");
+                                            ?>
+                                        </label>
+                                    </div>
+                                <?php elseif (isset($data[0]['erro_pg_2'])) : ?>
+                                    <div><b>Error de pagamento da 2ª parcela: </b></div>
+                                    <div>
+                                        <label>
+                                            <?php echo ("<p><b>Motivo: </b>");
+                                            echo ($data[0]['erro_pg_2']);
+                                            echo ("</p>");
+                                            ?>
+                                        </label>
+                                    </div>
+                                <?php else : ?>
+                                    <div></div>
+                                <?php endif; ?>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
