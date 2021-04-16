@@ -200,12 +200,12 @@ $userID = $app->user->id; //$registrations[0]->id;
                                     <b>Resultado do Pagamento da 1ª parcela no valor de R$ 500,00: </b>
                                 </div>
                                 <div>
-                                    <?php echo ("<b>Status do Pagamento: </b>");
+                                    <?php echo ("<b>Situação do Pagamento: </b>");
                                     echo ($data[0]['resultado_pg_1']);
                                     ?>
                                 </div>
-                                <div><?php echo ('<b>Data e Hora do Pagamento: </b>');
-                                        echo ($data[0]['data_pg_1']); ?>
+                                <div><?php echo ('<b>Data do Pagamento: </b>');
+                                        echo (date("d/m/Y", strtotime($data[0]['data_pg_1']))); ?>
                                 </div>
                             <?php elseif ((empty($data[0]['resultado_pg_1']) == true && empty($data[0]['data_pg_1']) == true) && $status_inscricao >= '10') : ?>
                                 <br>
@@ -213,11 +213,11 @@ $userID = $app->user->id; //$registrations[0]->id;
                                     <b>Resultado do Pagamento da 1ª parcela no valor de R$ 500,00: </b>
                                 </div>
                                 <div>
-                                    <?php echo ("<b>Status do Pagamento: </b>");
+                                    <?php echo ("<b>Situação do Pagamento: </b>");
                                     echo ("PENDENTE");
                                     ?>
                                 </div>
-                                <div><?php echo ('<b>Data e Hora do Pagamento: </b>');
+                                <div><?php echo ('<b>Data do Pagamento: </b>');
                                         echo ("PENDENTE"); ?>
                                 </div>
                             <?php endif; ?>
@@ -227,12 +227,12 @@ $userID = $app->user->id; //$registrations[0]->id;
                                     <b>Resultado do Pagamento da 2ª parcela no valor de R$ 500,00: </b>
                                 </div>
                                 <div>
-                                    <?php echo ("<b>Status do Pagamento: </b>");
+                                    <?php echo ("<b>Situação do Pagamento: </b>");
                                     echo ($data[0]['resultado_pg_2']);
                                     ?>
                                 </div>
-                                <div><?php echo ('<b>Data e Hora do Pagamento: </b>');
-                                        echo ($data[0]['data_pg_2']); ?>
+                                <div><?php echo ('<b>Data do Pagamento: </b>');
+                                        echo (date("d/m/Y", strtotime($data[0]['data_pg_2']))); ?>
                                 </div>
                             <?php elseif (empty($data[0]['resultado_pg_2']) == true && empty($data[0]['data_pg_2']) == true && $status_inscricao >= '10') : ?>
                                 <br>
@@ -240,18 +240,18 @@ $userID = $app->user->id; //$registrations[0]->id;
                                     <b>Resultado do Pagamento da 2ª parcela no valor de R$ 500,00: </b>
                                 </div>
                                 <div>
-                                    <?php echo ("<b>Status do Pagamento: </b>");
+                                    <?php echo ("<b>Situação do Pagamento: </b>");
                                     echo ("PENDENTE");
                                     ?>
                                 </div>
-                                <div><?php echo ('<b>Data e Hora do Pagamento: </b>');
+                                <div><?php echo ('<b>Data do Pagamento: </b>');
                                         echo ("PENDENTE"); ?>
                                 </div>
                             <?php endif; ?>
                             <br>
                             <div>
                                 <?php if (isset($data[0]['erro_pg_1'])) : ?>
-                                    <div><b>Error de pagamento da 1ª parcela: </b></div>
+                                    <div><b>Erro de pagamento da 1ª parcela: </b></div>
                                     <div>
                                         <label>
                                             <?php echo ("<p><b>Motivo: </b>");
@@ -261,7 +261,7 @@ $userID = $app->user->id; //$registrations[0]->id;
                                         </label>
                                     </div>
                                 <?php elseif (isset($data[0]['erro_pg_2'])) : ?>
-                                    <div><b>Error de pagamento da 2ª parcela: </b></div>
+                                    <div><b>Erro de pagamento da 2ª parcela: </b></div>
                                     <div>
                                         <label>
                                             <?php echo ("<p><b>Motivo: </b>");
