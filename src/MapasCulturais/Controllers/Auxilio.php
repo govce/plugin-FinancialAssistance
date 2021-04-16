@@ -1369,7 +1369,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
           $registrations_array = explode(";", $data["registrations"]);
           $registrations_string = implode(", ", $registrations_array);
 
-          $dql .= "AND se.registration_id IN ($registrations_string)";
+          $dql .= "AND se.registration IN ($registrations_string)";
       }
 
       if ($data["remakePayment"]) {

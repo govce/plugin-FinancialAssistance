@@ -183,9 +183,9 @@ $userID = $app->user->id; //$registrations[0]->id;
                                 <label>
                                     <?php
                                     if ($motivo_inscricao == null || $motivo_inscricao == "") {
-                                        echo ("<p><b>Motivo: </b>");
-                                        echo ("Mensagem padrão");
-                                        echo ("</p>");
+                                        // echo ("<p><b>Motivo: </b>");
+                                        // echo ("Mensagem padrão");
+                                        // echo ("</p>");
                                     } else {
                                         echo ("<p><b>Motivo: </b>");
                                         echo ($motivo_inscricao);
