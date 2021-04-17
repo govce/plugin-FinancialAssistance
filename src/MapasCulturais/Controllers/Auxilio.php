@@ -694,9 +694,9 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
           'TIPO_MOEDA' => '',
           'USO_BANCO_85' => '',
           'VALOR_INTEIRO' => function ($registrations) use ($detahe1, $app) {
-              $payment = $app->em->getRepository('\RegistrationPayments\Payment')->findOneBy([
-                  'registration' => $registrations->id
-              ]);
+            //   $payment = $app->em->getRepository('\RegistrationPayments\Payment')->findOneBy([
+            //       'registration' => $registrations->id
+            //   ]);
 
               return preg_replace('/[^0-9]/i', '', number_format(500, 2, ",","."));
           },
