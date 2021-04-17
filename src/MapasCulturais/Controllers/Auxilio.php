@@ -164,7 +164,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
   
   private function generateCnab240($registrations, $payments) { 
       ini_set('max_execution_time', 0);
-      ini_set('memory_limit', '768M');
+      ini_set('memory_limit', '-1');
 
       /**
        * Verifica se o usuário está autenticado
