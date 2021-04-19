@@ -204,9 +204,13 @@ $userID = $app->user->id; //$registrations[0]->id;
                                     echo ($data[0]['resultado_pg_1']);
                                     ?>
                                 </div>
-                                <div><?php echo ('<b>Data do Pagamento: </b>');
-                                        echo (date("d/m/Y", strtotime($data[0]['data_pg_1']))); ?>
+                                <div>
+                                    <b>Situação do Pagamento: </b>entre 20/04 a 30/04
                                 </div>
+                                <!-- <div><?php //echo ('<b>Data do Pagamento: </b>');
+                                            //echo (date("d/m/Y", strtotime($data[0]['data_pg_1']))); 
+                                            ?>
+                                </div> -->
                             <?php elseif ((empty($data[0]['resultado_pg_1']) == true && empty($data[0]['data_pg_1']) == true) && $status_inscricao >= '10') : ?>
                                 <br>
                                 <div>
@@ -231,8 +235,12 @@ $userID = $app->user->id; //$registrations[0]->id;
                                     echo ($data[0]['resultado_pg_2']);
                                     ?>
                                 </div>
-                                <div><?php echo ('<b>Data do Pagamento: </b>');
-                                        echo (date("d/m/Y", strtotime($data[0]['data_pg_2']))); ?>
+                                <!-- <div><?php //echo ('<b>Data do Pagamento: </b>');
+                                            //echo (date("d/m/Y", strtotime($data[0]['data_pg_2']))); 
+                                            ?>
+                                </div> -->
+                                <div>
+                                    <b>Situação do Pagamento: </b>entre 15/05 a 31/05
                                 </div>
                             <?php elseif (empty($data[0]['resultado_pg_2']) == true && empty($data[0]['data_pg_2']) == true && $status_inscricao >= '10') : ?>
                                 <br>
