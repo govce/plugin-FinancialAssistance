@@ -13,7 +13,8 @@ class Plugin extends \MapasCulturais\Plugin
   {
 
     $config += [
-      'config-cnab240' => require_once __DIR__ . '/config/config-cnab240.php'
+      'config-cnab240' => require_once __DIR__ . '/config/config-cnab240.php',
+      'config-import-cnab240' => require_once __DIR__ . '/config/config-import-cnab240.php'
     ];
 
     parent::__construct($config);
@@ -34,6 +35,13 @@ class Plugin extends \MapasCulturais\Plugin
       }
     });
 
+    $app->hook('template(opportunity.<<single|edit>>.sidebar-right):end', function () {
+      $opportunity = $this->controller->requestedEntity;
+      if ($opportunity->canUser('@control')) {
+          $this->part('auxilio/cnab240-uploads', ['entity' => $opportunity]);
+      }
+    });
+
     // //BOTÃO DE VERIFICAÇÃO DE INSCRIÇÃO   
     // /*$app->hook('template(opportunity.single.main-content):begin', function () use ($app) {
     //   $opportunityId = $this->controller->requestedEntity->id;
@@ -51,5 +59,18 @@ class Plugin extends \MapasCulturais\Plugin
     $app = App::i();
 
     $app->registerController('paymentauxilio', 'MapasCulturais\Controllers\Auxilio');
+
+    $config = $app->plugins['RegistrationPaymentsAuxilio']->config;
+
+    $cnab240 = new \MapasCulturais\Definitions\FileGroup(
+      "cnab240-{$config['opportunity_id']}",
+      ["^text/plain$", "^application/octet-stream$"],
+      "O arquivo enviado não e um arquivo de retorno CNAB240.",
+      false,
+      null,
+      true
+    );
+
+    $app->registerFileGroup("opportunity", $cnab240);
   }
 }
