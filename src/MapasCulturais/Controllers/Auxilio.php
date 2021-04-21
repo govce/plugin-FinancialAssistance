@@ -1521,12 +1521,14 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
     public function ALL_bankData()
     {
         $app = App::i();
+        $opportunity = $this->config['opportunity_id'];
         $num_inscricao = $this->data['num_inscricao'];
         $banco = $this->data['bank'];
         $agencia = $this->data['agencia'];
-        $tipoConta = $this->data['contaTipe'];
+        $tipoConta = json_encode($this->data['contaTipe']);
         $conta = $this->data['conta'];
-
+        //var_dump($tipoConta);
+        //die();
         $updateBanco = "
             update 
                 public.registration_meta
@@ -1564,7 +1566,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             update 
                 public.registration_meta
             set
-                value = '$tipoConta' 
+                value = '[$tipoConta]' 
             where 
                 object_id = $num_inscricao
                 and key = 'field_26528'
@@ -1578,7 +1580,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
         $stmt->execute();
         $stmt = $app->em->getConnection()->prepare($updateTipoConta);
         $stmt->execute();
-        die();
+        $app->redirect($app->createUrl('oportunidade', $opportunity, ['mensagem' => 'sucesso']));
     }
 
 

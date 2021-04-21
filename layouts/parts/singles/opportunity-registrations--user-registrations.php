@@ -9,7 +9,15 @@ $route = App::i()->createUrl('paymentauxilio', 'bankData');
 $registrations = $app->repo('Registration')->findByOpportunityAndUser($entity, $app->user);
 //$opportunity_id = $registrations[0]->opportunity->id;
 $userID = $app->user->id; //$registrations[0]->id;
+$msg = $this->controller->getUrlData();
 
+if (isset($msg['mensagem'])) {
+    echo '<script>';
+    echo 'alert("Dados salvos com sucesso!")';
+    echo '</script>';
+} else {
+    echo '';
+}
 ?>
 
 <div class="tabs-content">
@@ -600,7 +608,7 @@ $userID = $app->user->id; //$registrations[0]->id;
                     $bancoSelecionado = $dataConsultaBancaria[0]['banco'];
                     $contaSelecionada = $dataConsultaBancaria[0]['conta'];
                     $agenciaSelecionada = $dataConsultaBancaria[0]['agencia'];
-                    $tipoContaSelecionada = $dataConsultaBancaria[0]['tipo_conta'];
+                    $tipoContaSelecionada = json_decode($dataConsultaBancaria[0]['tipo_conta']);
                     ?>
                     <div>
                         <input type="hidden" name="num_inscricao" value="<?php echo ($registration_id); ?>" />
@@ -628,8 +636,8 @@ $userID = $app->user->id; //$registrations[0]->id;
                     <div>
                         <label for="mail"><b>TIPO DE CONTA BANCÁRIA: </b></label>
                         <select name="contaTipe" id="contaTipe">
-                            <option value='["Conta corrente"]' selected>Conta Corrente</option>
-                            <option value='["Conta poupança"]'>Conta Poupança</option>
+                            <option value='Conta corrente' selected><?php echo ($tipoContaSelecionada[0]) ?></option>
+                            <option value='Conta poupança'>Conta poupança</option>
                         </select>
                     </div>
                     <br>
