@@ -1531,7 +1531,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             update 
                 public.registration_meta
             set
-                value = $banco
+                value = '$banco'
             where 
                 object_id = $num_inscricao
                 and key = 'field_26529'
@@ -1542,7 +1542,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             update 
                 public.registration_meta
             set
-                value = $agencia
+                value = '$agencia'
             where 
                 object_id = $num_inscricao
                 and key = 'field_26530'
@@ -1553,7 +1553,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             update 
                 public.registration_meta
             set
-                value = $conta
+                value = '$conta'
             where 
                 object_id = $num_inscricao
                 and key  = 'field_26531'
@@ -1564,7 +1564,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             update 
                 public.registration_meta
             set
-                value = $tipoConta 
+                value = '$tipoConta' 
             where 
                 object_id = $num_inscricao
                 and key = 'field_26528'
@@ -1578,7 +1578,6 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
         $stmt->execute();
         $stmt = $app->em->getConnection()->prepare($updateTipoConta);
         $stmt->execute();
-        var_dump();
         die();
     }
 
