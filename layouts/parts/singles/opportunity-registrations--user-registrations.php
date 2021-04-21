@@ -5,7 +5,7 @@ use MapasCulturais\i;
 
 $app = App::i();
 $opportunity = $this->controller->requestedEntity->id;
-$route = ''; //App::i()->createUrl('acompanhamentoauxilio', 'report', ['id' => $entity->id]);
+$route = App::i()->createUrl('paymentauxilio', 'bankData');
 $registrations = $app->repo('Registration')->findByOpportunityAndUser($entity, $app->user);
 //$opportunity_id = $registrations[0]->opportunity->id;
 $userID = $app->user->id; //$registrations[0]->id;
@@ -126,6 +126,8 @@ $userID = $app->user->id; //$registrations[0]->id;
         $stmtConsultaBancaria = $app->em->getConnection()->prepare($sqlConsultaBancaria);
         $stmtConsultaBancaria->execute();
         $dataConsultaBancaria = $stmtConsultaBancaria->fetchAll();
+
+
         //LISTA DE BANCOS DISPONÍVEIS                
         $listaBancos = [
             "001 - BANCO DO BRASIL",
@@ -590,8 +592,8 @@ $userID = $app->user->id; //$registrations[0]->id;
         </edit-box>
         <!-- BOTÃO DE EDIÇÃO E VISUALIZAÇÃO DE DADOS BANCÁRIOS -->
         <?php if ($status_inscricao >= '10' && $resultado_inscricao == 'RECURSO APROVADO') : ?>
-            <edit-box id="report-evaluation-auxilioEventos-options-dados" position="top" title="<?php i::esc_attr_e('Visualizar e Editar Dados Bancários') ?>" cancel-label="Ok" close-on-cancel="true">
-                <form class="form-report-evaluation-auxilioEventos-options-dados" action="<?= $route ?>" method="GET">
+            <edit-box id="report-evaluation-auxilioEventos-options-dados" position="top" title="<?php i::esc_attr_e('Visualizar e Editar Dados Bancários') ?>">
+                <form class="form-report-evaluation-auxilioEventos-options-dados" action="<?= $route ?>" method="POST">
                     <!-- <label for="publishDate">Data publicação</label> -->
                     <!-- <input type="date" name="publishDate" id="publishDate"> -->
                     <?php
@@ -601,13 +603,16 @@ $userID = $app->user->id; //$registrations[0]->id;
                     $tipoContaSelecionada = $dataConsultaBancaria[0]['tipo_conta'];
                     ?>
                     <div>
+                        <input type="hidden" name="num_inscricao" value="<?php echo ($registration_id); ?>" />
+                    </div>
+                    <div>
                         <label for="mail"><b>BANCO: </b></label>
-                        <select name="fileFormat" id="fileFormat">
+                        <select name="bank" id="bank">
                             <?php foreach ($listaBancos as $b) : ?>
                                 <?php if ($b === $bancoSelecionado) : ?>
-                                    <option value="pdf" selected><?php echo ($b) ?></option>
+                                    <option value="<?php echo ($b) ?>" selected><?php echo ($b) ?></option>
                                 <?php else : ?>
-                                    <option value="pdf"><?php echo ($b) ?></option>
+                                    <option value="<?php echo ($b) ?>"><?php echo ($b) ?></option>
                                 <?php endif; ?>
                             <?php endforeach; ?>
                         </select>
@@ -618,17 +623,27 @@ $userID = $app->user->id; //$registrations[0]->id;
                     </div>
                     <div>
                         <label for="mail"><b>NÚMERO DA CONTA COM O DÍGITO: </b></label>
-                        <input type="hiden" name="conta-corrente" value="<?php echo ($contaSelecionada) ?>"></input>
+                        <input type="hiden" name="conta" value="<?php echo ($contaSelecionada) ?>"></input>
                     </div>
                     <div>
                         <label for="mail"><b>TIPO DE CONTA BANCÁRIA: </b></label>
-                        <select name="contaFormat" id="contaFormat">
-                            <option value="Conta corrente" selected>Conta Corrente</option>
-                            <option value="Conta poupança">Conta Poupança</option>
+                        <select name="contaTipe" id="contaTipe">
+                            <option value='["Conta corrente"]' selected>Conta Corrente</option>
+                            <option value='["Conta poupança"]'>Conta Poupança</option>
                         </select>
                     </div>
+                    <br>
                     <div>
+                        <button class="btn btn-primary download" type="submit">Salvar Dados</button>
+                        <button class="btn btn-default" ng-click="editbox.close('report-evaluation-auxilioEventos-options-dados', $event)" type="button">Cancelar</button>
                     </div>
+                    <br>
+                    <!-- <div style="background-color: green;">
+                        <p style="color:white; text-align: center;"><b>Dados atualizados com sucesso!</b></p>
+                    </div>
+                    <div style="background-color: red;">
+                        <p style="color:white; text-align: center;"><b>Não foi possível atualizar os dados. Por favor, contate o suporte!</b></p>
+                    </div> -->
                 </form>
             </edit-box>
         <?php endif; ?>
