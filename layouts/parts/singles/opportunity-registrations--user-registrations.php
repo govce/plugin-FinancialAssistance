@@ -93,6 +93,40 @@ $userID = $app->user->id; //$registrations[0]->id;
         $stmt->execute();
         $data = $stmt->fetchAll();
 
+        //CONSULTA DE DADOS BANCÁRIOS
+        $sqlConsultaBancaria = "
+            select distinct
+                rm_banco.value as banco,
+                rm_agencia.value as agencia,
+                rm_conta.value as conta,
+                rm_tipo_conta.value as tipo_conta
+            from 
+                public.registration as r
+                inner join public.registration_meta as rm_banco
+                    on rm_banco.object_id = r.id
+                    and rm_banco.key = 'field_26529'
+                inner join public.registration_meta as rm_agencia
+                    on rm_agencia.object_id = r.id
+                    and rm_agencia.key = 'field_26530'
+                inner join public.registration_meta as rm_conta
+                    on rm_conta.object_id = r.id
+                    and rm_conta.key = 'field_26531'
+                inner join public.registration_meta as rm_tipo_conta
+                    on rm_tipo_conta.object_id = r.id
+                    and rm_tipo_conta.key =  'field_26528'
+                left join public.registration_field_configuration rfc
+                    on rfc.opportunity_id = r.opportunity_id
+                    and rfc.id in (26528, 26529, 26530, 26531)
+            where 
+                r.opportunity_id = 2852
+                and r.status = 10
+                and r.id = $registration_id
+                and  r.opportunity_id in (select opportunity_id from public.registration_field_configuration where id in (26528, 26529, 26530, 26531) and opportunity_id = 2852)           
+        ";
+        $stmtConsultaBancaria = $app->em->getConnection()->prepare($sqlConsultaBancaria);
+        $stmtConsultaBancaria->execute();
+        $dataConsultaBancaria = $stmtConsultaBancaria->fetchAll();
+        //LISTA DE BANCOS DISPONÍVEIS                
         $listaBancos = [
             "001 - BANCO DO BRASIL",
             "104 - CAIXA ECONOMICA FEDERAL",
@@ -560,36 +594,31 @@ $userID = $app->user->id; //$registrations[0]->id;
                 <form class="form-report-evaluation-auxilioEventos-options-dados" action="<?= $route ?>" method="GET">
                     <!-- <label for="publishDate">Data publicação</label> -->
                     <!-- <input type="date" name="publishDate" id="publishDate"> -->
+                    <?php
+                    $bancoSelecionado = $dataConsultaBancaria[0]['banco'];
+                    $contaSelecionada = $dataConsultaBancaria[0]['conta'];
+                    $agenciaSelecionada = $dataConsultaBancaria[0]['agencia'];
+                    $tipoContaSelecionada = $dataConsultaBancaria[0]['tipo_conta'];
+                    ?>
                     <div>
                         <label for="mail"><b>BANCO: </b></label>
-                        <?php
-                        $bancoselecionado = '036 - BANCO BBI';
-                        foreach ($listaBancos as $b) {
-                            //var_dump($b);
-                            //die();
-                            if ($b === $bancoselecionado) {
-                                echo ("<option selected>");
-                                echo ($b);
-                                echo ("</option>");
-                            } else {
-                                echo ("<option>");
-                                echo ($b);
-                                echo ("</option>");
-                            }
-                        }
-                        ?>
-                        <!-- <select name="fileFormat" id="fileFormat">
-                            <option value="pdf" selected>PDF</option>
-                            <option value="xls">XLS</option>
-                        </select> -->
+                        <select name="fileFormat" id="fileFormat">
+                            <?php foreach ($listaBancos as $b) : ?>
+                                <?php if ($b === $bancoSelecionado) : ?>
+                                    <option value="pdf" selected><?php echo ($b) ?></option>
+                                <?php else : ?>
+                                    <option value="pdf"><?php echo ($b) ?></option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div>
-                        <label for="mail"><b>NÚMERO DA AGÊNCIA COM O DÍGITO ( XXXX-XX): </b></label>
-                        <input type="hiden" name="agencia" value="agencia"></input>
+                        <label for="mail"><b>NÚMERO DA AGÊNCIA COM O DÍGITO: </b></label>
+                        <input type="hiden" name="agencia" value="<?php echo ($agenciaSelecionada) ?>"></input>
                     </div>
                     <div>
-                        <label for="mail"><b>NÚMERO DA CONTA COM O DÍGITO (XXXXXXX-XX): </b></label>
-                        <input type="hiden" name="conta-corrente" value="conta-corrente">TESTE</input>
+                        <label for="mail"><b>NÚMERO DA CONTA COM O DÍGITO: </b></label>
+                        <input type="hiden" name="conta-corrente" value="<?php echo ($contaSelecionada) ?>"></input>
                     </div>
                     <div>
                         <label for="mail"><b>TIPO DE CONTA BANCÁRIA: </b></label>
