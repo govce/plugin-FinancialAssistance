@@ -636,8 +636,13 @@ if (isset($msg['mensagem'])) {
                     <div>
                         <label for="mail"><b>TIPO DE CONTA BANCÁRIA: </b></label>
                         <select name="contaTipe" id="contaTipe">
-                            <option value='Conta corrente' selected><?php echo ($tipoContaSelecionada[0]) ?></option>
-                            <option value='Conta poupança'>Conta poupança</option>
+                            <?php if ($tipoContaSelecionada[0] == 'Conta poupança') : ?>
+                                <option value='Conta poupança' selected><?php echo ($tipoContaSelecionada[0]) ?></option>
+                                <option value='Conta corrente'>Conta corrente</option>
+                            <?php elseif ($tipoContaSelecionada[0] == 'Conta corrente') : ?>
+                                <option value='Conta corrente' selected><?php echo ($tipoContaSelecionada[0]) ?></option>
+                                <option value='Conta poupança'>Conta poupança</option>
+                            <?php endif; ?>
                         </select>
                     </div>
                     <br>
