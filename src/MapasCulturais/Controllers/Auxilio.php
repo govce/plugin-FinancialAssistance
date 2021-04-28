@@ -1373,7 +1373,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
       }
 
       if ($data["remakePayment"]) {
-          $dql .= "AND se.status IN (0, 1, 2)";
+          $dql .= "AND se.status IN (0, 1, 2, 4)";
       } else {
           $dql .= "AND se.status = 0";
       }
@@ -1576,16 +1576,110 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
     return;
   }
 
+    /**
+     * Processa o retorno do CNAB240 e faz a validação de processado ou não
+     */
+    private function validatedCanb($code, $seg, $cpf, $inscri, $lote){
+        $returnCode = $returnCode = $this->config['config-import-cnab240']['returnCode'];
+        $positive = $returnCode['positive'];
+        $negative = $returnCode['negative'];
+        foreach($positive as $key => $value){
+            if($key === $code){
+                return [
+                    //'seg' => $seg,
+                    'lote' => $lote,
+                    'inscricao' => $inscri,
+                    'cpf' => $cpf,
+                    'status' => true,
+                    'reason' => $value
+                ];
+            }
+        }
+
+        foreach($negative as $key => $value){
+            if($key === $code){
+                return [
+                    'lote' => $lote,
+                    'inscricao' => $inscri,
+                    'cpf' => $cpf,
+                    'status' => false,
+                    'reason' => $value
+                ];
+            }
+        }
+    }
+
+    /**
+     * Pega o registro dentro de uma determinada posição do CNAB240
+     */
+    private function getLineData($line, $start, $end){
+        $data = "";
+        $char = strlen($line);       
+        if(!empty($line)){
+            for($i=0; $i<$char; $i++){
+                if($i>=$start && $i<=$end){
+                    $data .= $line[$i];
+                    
+                }
+            }
+        }
+        return trim($data);
+    }
+
+  /**
+    * faz o mapeamento do CNAB20... separa os lotes, treiller e header
+   */
+  private function mappedCnab($file){
+    $stream = fopen($file,"r");
+    $result = [];
+    $countLine = 1;
+    while(!feof($stream)){
+        $linha = fgets($stream);
+        if(!empty($linha)){
+            $value = $this->getLineData($linha, 0, 7);
+            switch ($value) {
+                case '00100000':
+                    $result['HEADER_ARQ'][$countLine] = $countLine;
+                    $result['HEADER_DATA_ARQ'][$countLine] = $linha;
+                    break;
+                case '00100011':
+                case '00100013':
+                case '00100015':
+                    $result['LOTE_1'][$countLine] = $countLine;
+                    $result['LOTE_1_DATA'][$countLine] = $linha;
+                    break;
+                case '00100021':
+                case '00100023':
+                case '00100025':
+                    $result['LOTE_2'][$countLine] = $countLine;
+                    $result['LOTE_2_DATA'][$countLine] = $linha;
+                    break;
+                case '00100031':
+                case '00100033':
+                case '00100035':
+                    $result['LOTE_3'][$countLine] = $countLine;
+                    $result['LOTE_3_DATA'][$countLine] = $linha;
+                    break;
+                case '00199999':
+                    $result['TREILLER_ARQ'][$countLine] = $countLine;
+                    $result['TREILLER_DATA_ARQ'][$countLine] = $linha;
+                    break;                    
+            }
+        }
+        $countLine ++;
+    }
+    return $result;
+  }
+
   private function importCnab240($opportunity, string $filename){   
-      
-    echo "Cheguei aqui";
-    exit;''
 
     $app = App::i();
     $conn = $app->em->getConnection();
     $plugin = $app->plugins['AldirBlanc'];   
     $processingDate = new DateTime();
     $processingDate = $processingDate->format('Y-m-d');    
+
+    $return_date = null;
 
     $result = [];
     $countLine = 1;
@@ -1644,16 +1738,17 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                     $n = $this->getLineData($r, 230, 231);
                     $result['LOTE_1']['LOTE_STATUS']  = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
 
-                }elseif($key_r == $LOTE1_T){}else{ 
-                    $seg = ($key_r % 2) == true ? "A" : "B";
+                }elseif($key_r == $LOTE1_T){
+                } else { 
+                    $seg = $this->getLineData($r, 13, 13);
 
-                    if($seg === "A"){
+                    if($seg === "A") {
                         //Valida as inscrições
+                        $return_date = $this->getLineData($r, 90, 100);
                         $code = $this->getLineData($r, 230, 231);
                         $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
 
-                    }
-                    else{
+                    } elseif ($seg === "B") {
                         //Pega o tipo de documento CPF ou CNPJ
                         $tipo = $this->getLineData($r, 17, 17);
                         
@@ -1672,7 +1767,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                             $inscri = $this->getLineData($r, 33, 62);
 
                         }else{
-                            $inscri = $conn->fetchColumn("select id from registration where agents_data like :cpf",['cpf' => '%"documento":"' . $cpf_cnpj . '"%']);
+                            $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like '%$cpf_cnpj%' AND opportunity_id = {$opportunity->id}");
 
                         }
                         $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
@@ -1696,14 +1791,13 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                     $result['LOTE_2']['LOTE_STATUS'] = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
 
                 }elseif($key_r == $LOTE2_T){}else{ 
-                    $seg = ($key_r % 2) == true ? "A" : "B";
+                    $seg = $this->getLineData($r, 13, 13);
 
                     if($seg === "A"){
                         //Valida as inscrições
                         $code = $this->getLineData($r, 230, 231);
                         $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
-                    }
-                    else{
+                    } elseif ($seg === "B") {
                         // Pega o tipo de documento CPF ou CNPJ
                         $tipo = $this->getLineData($r, 17, 17);
                         
@@ -1722,7 +1816,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                             $inscri = $this->getLineData($r, 33, 62);
 
                         }else{
-                            $inscri = $conn->fetchColumn("select id from registration where agents_data like :cpf",['cpf' => '%"documento":"' . $cpf_cnpj . '"%']);
+                            $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like '%$cpf_cnpj%' AND opportunity_id = {$opportunity->id}");
 
                         }
                         $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
@@ -1744,14 +1838,13 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                     $result['LOTE_3']['LOTE_STATUS'] = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
 
                 }elseif($key_r == $LOTE3_T){}else{ 
-                    $seg = ($key_r % 2) == true ? "A" : "B";
+                    $seg = $this->getLineData($r, 13, 13);
 
-                    if($seg === "A"){
+                    if($seg === "A") {
                         //Valida as inscrições
                         $code = $this->getLineData($r, 230, 231);
                         $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
-                    }
-                    else{
+                    } elseif ($seg === "B") {
                          //Pega o tipo de documento CPF ou CNPJ
                          $tipo = $this->getLineData($r, 17, 17);
                         
@@ -1770,7 +1863,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                              $inscri = $this->getLineData($r, 33, 62);
 
                          }else{
-                             $inscri = $conn->fetchColumn("select id from registration where agents_data like :cpf",['cpf' => '%"documento":"' . $cpf_cnpj . '"%']);
+                             $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like '%$cpf_cnpj%' AND opportunity_id = {$opportunity->id}");
 
                          }
                          $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
@@ -1788,90 +1881,31 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
     //Arrays que serão realmente avaliados no processmento do retorno
     $check = ['LOTE_1', 'LOTE_2', 'LOTE_3'];
     
-    //Faz o processamento do retono na base do Mapas
-    $csv_data = [];
-    $contProcess = 0;
-    foreach($result as $key_result => $value){
-        if(in_array($key_result, $check)){
-            foreach($value as $key_value => $r){
-                if($key_value != "LOTE_STATUS"){
-                     //Conta os registros processados
-                    $contProcess++;
+    foreach($result as $key_result => $value) {
+        if(in_array($key_result, $check)) {
+            foreach($value as $key_value => $r) {
+                if($key_value != "LOTE_STATUS") {
+                    // PAGO = 3
+                    // NÃO PAGO = 4
+                    $status = $r['status'] ? 3: 4;
+                    $error = $status === 3 ? "": $r["reason"];
+                    $return_date = DateTime::createFromFormat('dmY', $return_date)->format('Y-m-d H:i:s');
 
-                    if(!empty($r['inscricao'])){
-                        // Pega o pagamento da inscrição
-                        $payment = $app->em->getRepository('\\RegistrationPayments\\Payment')->findOneBy([
-                            'registration' => preg_replace('/[^\d\-]/', '',$r['inscricao'])
-                        ]); 
-                        
-                        //Caso nao exita pagamento ele ignora e insere o log no CSV
-                        if(!$payment){
-                            $r['status'] = 'RETORNO NÃO PROCESSADO, PAGAMENTO NÃO ENCONTRADO';
-                            $csv_data[] = $r; 
-                            $app->log->info("#".$contProcess." - ". $r['inscricao'] . " - RETORNO NÃO PROCESSADO - PAGAMENTO NÃO ENCONTRADO" );
-                            continue;
-                        }
-                        
-                        //Remonta o metadado de pagamento com informações do CNAB
-                        $meta_data = []; 
-                        $status_txt = $r['status'] ? 'PAGAMENTO EFETUADO' : 'PAGAMENTO NÃO EFETUADO';
-                        $reason = $r['reason'];
-                        $status_code = $r['status'] ? Payment::STATUS_PAID : Payment::STATUS_FAILED;
-                       
-                        $paymenteMetadata = $payment->metadata;  
-                        
-                        $meta_data = $paymenteMetadata;
-                        if(!(isset($paymenteMetadata['return_cnab_info']) ?? false)){                                
-                            $meta_data['return_cnab_info'] = [
-                                'STATUS_CODE' => $status_code,
-                                'STATUS_TXT' => $status_txt,
-                                'PROCESSING_DATE' => $processingDate,
-                                'REASON' => $reason,
-                                'CNAB_FILE_NAME' => $filename,
-                                'REPROCESSED' => 'NÃO',
-                                'REPROCESSED_DATE' => '',                             
-                                'REPROCESSED_CNAB_FILE_NAME' => '',
-                                'REPROCESSED_REASON' => '',
-                            ];
-                           $app->log->info("#".$contProcess." - ". $r['inscricao'] . " - RETORNO PROCESSADO - {$status_txt}" );
+                    // 1. Verificar se a primeira parcela já foi paga
+                        // a. Se foi paga, atualize a parcela dois.
+                        // b. Se não foi paga, atualize a parcela um.
+                        // c. Se as duas já foram pagar, não fazer nada e botar no log.
 
-                        }else{
-                            $statusCodeAtual =  $meta_data['return_cnab_info']['STATUS_CODE'];
-                            $statusTxtAtual = $meta_data['return_cnab_info']['STATUS_TXT'];
-                           
-                            if($statusCodeAtual == Payment::STATUS_FAILED && $status_code == Payment::STATUS_PAID){                               
-                                $meta_data['return_cnab_info']['STATUS_CODE'] = $status_code;
-                                $meta_data['return_cnab_info']['STATUS_TXT'] = $status_txt;
-                                $meta_data['return_cnab_info']['REPROCESSED'] = 'SIM';
-                                $meta_data['return_cnab_info']['REPROCESSED_DATE'] = $processingDate;
-                                $meta_data['return_cnab_info']['REPROCESSED_CNAB_FILE_NAME'] = $filename;
-                                $meta_data['return_cnab_info']['REPROCESSED_REASON'] = $reason;    
-                                $app->log->info("#".$contProcess." - ". $r['inscricao'] . " - RETORNO RE-PROCESSADO - ".$status_txt );
-                            }else{
-                                $app->log->info("#".$contProcess." - ". $r['inscricao'] . " - JÁ PROCESSADO - {$statusTxtAtual} - SEM MUDANÇA DE STATUS NESSE PROCESSAMENTO" );
-                            }
+                    $payment = $app->em->getRepository('SecultCEPayment')->findBy([
+                        'registration' => $r["inscricao"]
+                    ]);
 
-                        }
-                        //Salva o novo metadado
-                        $payment->metadata = $meta_data;
-                       
-                        $payment->save(true);
-
-                        //Seta o status em texto para o CSV
-                        $r['status'] = $status_txt;
-
-                    } else {
-                        // Seta o status em texto para o CSV caso nao encontre a inscrição 
-                        $r['status'] = "";
-                        // $app->log->info("#".$contProcess." - ". $r['cpf'] . " - RETORNO NÃO PROCESSADO - FALTA NÚMERO DE INSCRIÇÃO" );
-                    }                        
-                    //Monta o csv de resumo do processamento
-                    $csv_data[] = $r; 
+                    $query_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date' WHERE  registration_id = {$r['inscricao']}";
                 }
             }
-        }           
-    }    
-    
+        }
+    }
+
     var_dump($result);
     exit;
     

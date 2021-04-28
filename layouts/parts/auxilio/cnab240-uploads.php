@@ -21,7 +21,7 @@ $template = '
         <a class="add js-open-editbox hltip" data-target="#editbox-cnab240eventos-file" href="#" title="Clique para adicionar subir novo arquivo de retorno do CNAB240"> subir arquivo</a>
     </div>
     <div id="editbox-cnab240eventos-file" class="js-editbox mc-left" title="Subir arquivo de retorno do CNAB240" data-submit-label="Enviar">
-        <?php $this->ajaxUploader($entity, 'cnab240', 'append', 'ul.js-dataprev', $template, '', false, false, false)?>
+        <?php $this->ajaxUploader($entity, "cnab240-{$entity->id}", 'append', 'ul.js-dataprev', $template, '', false, false, false)?>
     </div>
     <ul class="widget-list js-dataprev js-slimScroll">
         <?php if(is_array($files)): foreach($files as $file): ?>
