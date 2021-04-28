@@ -39,6 +39,7 @@ if (isset($msg['mensagem'])) {
                     ) as motivo,
                     r.status as status_insc,
                     case
+                        when r.status = 7 then 'RECURSO PENDENTE'
                         when r.status = 10 then 'RECURSO APROVADO'
                         when r.status = 8 then 'RECURSO ESGOTADO'
                         when r.status = 3 then 'RECURSO REPROVADO'
@@ -490,7 +491,7 @@ if (isset($msg['mensagem'])) {
                         ?>
                     </div>
                     <div>
-                        <?php if ($status_inscricao < '10') : ?>
+                        <?php if ($status_inscricao < '10' && $status_inscricao != '7') : ?>
                             <div>
                                 <label>
                                     <?php
