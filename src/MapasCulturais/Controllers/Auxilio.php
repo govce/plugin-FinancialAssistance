@@ -1569,7 +1569,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
       
     foreach ($files as $file) {
         if ($file->id == $file_id) {                            
-            $this->importCnab240($opportunity, $file->getPath());
+            $this->importCnab240($opportunity, $file);
         }
     }
 
@@ -1671,7 +1671,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
     return $result;
   }
 
-  private function importCnab240($opportunity, string $filename){   
+  private function importCnab240($opportunity, $file){   
 
     $app = App::i();
     $conn = $app->em->getConnection();
@@ -1704,7 +1704,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
         exit;
     }
     
-    $data = $this->mappedCnab($filename);
+    $data = $this->mappedCnab($file->getPath());
     
     //Pega a linha do header do lote
     $LOTE1_H = isset($data['LOTE_1']) ? min($data['LOTE_1']) : null;
@@ -1889,8 +1889,10 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                 if($key_value != "LOTE_STATUS") {
                     // PAGO = 3
                     // NÃO PAGO = 4
+                    $payment_id = 0;
+                    $file_id = $file->id;
                     $status = $r['status'] ? 3: 4;
-                    $error = $status === 3 ? "": $r["reason"];
+                    $error = $status == 3 ? "": $r["reason"];
                     $installment = 0;
                     // 1. Verificar se a primeira parcela já foi paga
                         // a. Se foi paga, atualize a parcela dois.
@@ -1905,17 +1907,33 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                         $app->log->info("\n" . $r["inscricao"] . " já possui as duas parcelas pagas");
                         continue;
                     } else if ($secultce_payment[0]->status != 3) {
+                        $payment_id = $secultce_payment[0]->id;
                         $installment = 1;
                     } else if ($secultce_payment[1]->status != 3) {
+                        $payment_id = $secultce_payment[1]->id;
                         $installment = 2;
                     }
 
 
-                    $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date' WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
+                    $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date', return_file_id = $file_id WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
                     
+                    $action = "retorno";
+                    $resultado = $r["reason"];
+                    $file_date = $return_date;
+
+                    $query_insert_secultce_payment_history = "
+                        INSERT INTO secultce_payment_history 
+                            (payment_id, file_id, action, result, file_date) 
+                        VALUES 
+                            ($payment_id, $file_id, '$action', '$resultado', '$file_date');";
+
+
                     $stmt = $app->em->getConnection()->prepare($query_update_secultce_payment);
                     $stmt->execute();
-                    $data = $stmt->fetchAll();
+
+                    $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                    $stmt->execute();
+
                 }
             }
         }
@@ -1947,7 +1965,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
     $opportunity = $app->repo("Opportunity")->find($opportunity->id);
     $opportunity->refresh();
     $files = $opportunity->cnab240_processed_files;
-    $files->{basename($filename)} = date("d/m/Y \à\s H:i");
+    $files->{basename($file->getPath())} = date("d/m/Y \à\s H:i");
     $opportunity->cnab240_processed_files = $files;
     $opportunity->save(true);
     $app->enableAccessControl();

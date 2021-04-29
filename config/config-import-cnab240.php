@@ -6,7 +6,7 @@
 return [
     'returnCode' => [ // Array com códigos de retorno BB
         'positive' =>[ //<= códigos de retornos positivos
-            '00' => 'Este código indica que o pagamento foi confirmado',
+            '00' => 'Pagamento Efetuado com Sucesso!',
             '03' => 'Débito Autorizado pela Agência - Efetuado',
             'BD' => 'Inclusão Efetuada com Sucesso',
             'BE' => 'Alteração Efetuada com Sucesso',
