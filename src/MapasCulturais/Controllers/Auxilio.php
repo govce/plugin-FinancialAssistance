@@ -1880,6 +1880,8 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
   
     //Arrays que serão realmente avaliados no processmento do retorno
     $check = ['LOTE_1', 'LOTE_2', 'LOTE_3'];
+
+    $return_date = DateTime::createFromFormat('dmY', $return_date)->format('Y-m-d H:i:s');
     
     foreach($result as $key_result => $value) {
         if(in_array($key_result, $check)) {
@@ -1889,18 +1891,31 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
                     // NÃO PAGO = 4
                     $status = $r['status'] ? 3: 4;
                     $error = $status === 3 ? "": $r["reason"];
-                    $return_date = DateTime::createFromFormat('dmY', $return_date)->format('Y-m-d H:i:s');
-
+                    $installment = 0;
                     // 1. Verificar se a primeira parcela já foi paga
                         // a. Se foi paga, atualize a parcela dois.
                         // b. Se não foi paga, atualize a parcela um.
                         // c. Se as duas já foram pagar, não fazer nada e botar no log.
 
-                    $payment = $app->em->getRepository('SecultCEPayment')->findBy([
-                        'registration' => $r["inscricao"]
-                    ]);
+                    $secultce_payment = $app->repo("SecultCEPayment")->findBy([
+                        "registration" => $r["inscricao"]
+                    ], ['installment' => 'asc']);
 
-                    $query_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date' WHERE  registration_id = {$r['inscricao']}";
+                    if ($secultce_payment[0]->status == 3 &&  $secultce_payment[1]->status == 3) {
+                        $app->log->info("\n" . $r["inscricao"] . " já possui as duas parcelas pagas");
+                        continue;
+                    } else if ($secultce_payment[0]->status != 3) {
+                        $installment = 1;
+                    } else if ($secultce_payment[1]->status != 3) {
+                        $installment = 2;
+                    }
+
+
+                    $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date' WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
+                    
+                    $stmt = $app->em->getConnection()->prepare($query_update_secultce_payment);
+                    $stmt->execute();
+                    $data = $stmt->fetchAll();
                 }
             }
         }
