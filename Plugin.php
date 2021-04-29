@@ -62,6 +62,13 @@ class Plugin extends \MapasCulturais\Plugin
 
     $config = $app->plugins['RegistrationPaymentsAuxilio']->config;
 
+    $this->registerMetadata('MapasCulturais\Entities\Opportunity', "cnab240_eventos_processed_files", [
+      'label' => 'Arquivos de CNAB240 Processados',
+      'type' => 'json',
+      'private' => true,
+      'default_value' => '{}',
+    ]);
+
     $cnab240 = new \MapasCulturais\Definitions\FileGroup(
       "cnab240-{$config['opportunity_id']}",
       ["^text/plain$", "^application/octet-stream$"],

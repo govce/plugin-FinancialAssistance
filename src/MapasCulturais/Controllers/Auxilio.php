@@ -1939,34 +1939,12 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
         }
     }
 
-    var_dump($result);
-    exit;
-    
-    //Geração do CSV de resumo
-    $file_name = 'resumo-importacao-cnab240-'.$this->data['file'].'.csv';    
-    $dir =  PRIVATE_FILES_PATH . 'opportunity/'.$opportunity->id."/";
-    $patch = $dir . $file_name;        
-
-    if (!is_dir($dir)) {
-        mkdir($dir, 0700, true);
-    }
-
-    $stream = fopen($patch, 'w');        
-    $csv = Writer::createFromStream($stream);
-    $csv->setDelimiter(';');
-    $header = $this->hearderCsvCnab();
-    $csv->insertOne($header);
-
-    foreach ($csv_data as $key_csv => $csv_line) {            
-        $csv->insertOne($csv_line);
-    } 
-    
     $app->disableAccessControl();
     $opportunity = $app->repo("Opportunity")->find($opportunity->id);
     $opportunity->refresh();
-    $files = $opportunity->cnab240_processed_files;
+    $files = $opportunity->cnab240_eventos_processed_files;
     $files->{basename($file->getPath())} = date("d/m/Y \à\s H:i");
-    $opportunity->cnab240_processed_files = $files;
+    $opportunity->cnab240_eventos_processed_files = $files;
     $opportunity->save(true);
     $app->enableAccessControl();
     //$csv->output($file_name);
