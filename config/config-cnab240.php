@@ -119,7 +119,7 @@ return [
         ],
         'NOME_EMPRESA' => [ //Nome da fonte pagadora
             'length' => 30,
-            'default' => 'FUNDO ESTADUAL DE CULTURA',
+            'default' => 'SECRETARIA DA CULTURA',
             'field_id' => null,
             'type' => 'string',
         ],
