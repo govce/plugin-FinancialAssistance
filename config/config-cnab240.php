@@ -283,13 +283,13 @@ return [
         ],
         'CONTA' => [ //Conta bancária da fonte pagadora
             'length' => 12,
-            'default' => '000000028726',
+            'default' => '000000028890',
             'field_id' => 'mapped',
             'type' => 'int',
         ],
         'CONTA_DIGITO' => [ //Digito da conta bancária da fonte pagadora
             'length' => 1,
-            'default' => '1',
+            'default' => 'X',
             'field_id' => 'mapped',
             'type' => 'int',
         ],
