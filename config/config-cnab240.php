@@ -241,13 +241,13 @@ return [
         ],
         'INSCRICAO_NUMERO' => [ //CPF ou CNPJ da fonte pagadora, colocar com base no que foi informado no campo INSCRICAO_TIPO
             'length' => 14,
-            'default' => '01523484000116',
+            'default' => '07954555000111',
             'field_id' => null,
             'type' => 'int',
         ],        
         'CONVENIO_BB1' => [ // Número do convênio da fonte pagadora junto ao BB. Deve-ser verificar com secretaria da cultura
             'length' => 9,
-            'default' => '000273509',
+            'default' => '000293128',
             'field_id' => null,
             'type' => 'int',
         ],
