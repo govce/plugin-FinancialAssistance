@@ -1675,7 +1675,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
 
     $app = App::i();
     $conn = $app->em->getConnection();
-    $plugin = $app->plugins['AldirBlanc'];   
+    // $plugin = $app->plugins['AldirBlanc'];   
     $processingDate = new DateTime();
     $processingDate = $processingDate->format('Y-m-d');    
 
@@ -1887,8 +1887,6 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
         if(in_array($key_result, $check)) {
             foreach($value as $key_value => $r) {
                 if($key_value != "LOTE_STATUS") {
-                    // PAGO = 3
-                    // NÃO PAGO = 4
                     $payment_id = 0;
                     $file_id = $file->id;
                     $status = $r['status'] ? 3: 4;
@@ -1947,7 +1945,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration {
     $opportunity->cnab240_eventos_processed_files = $files;
     $opportunity->save(true);
     $app->enableAccessControl();
-    //$csv->output($file_name);
+
     $this->finish("ok");
   }
 
