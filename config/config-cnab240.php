@@ -59,13 +59,13 @@ return [
         ],
         'CPF_CNPJ_FONTE_PAG' => [ //CPF ou CNPJ da fonte pagadora, colocar com base no que foi informado no campo INSCRICAO_TIPO
             'length' => 14,
-            'default' => '01523484000116',
+            'default' => '07954555000111',
             'field_id' => null,
             'type' => 'int',
         ],
         'CONVENIO_BB1' => [ // Número do convênio da fonte pagadora junto ao BB. Deve-ser verificar com secretaria da cultura
             'length' => 9,
-            'default' => '000273509',
+            'default' => '000293128',
             'field_id' => null,
             'type' => 'int',
         ],
@@ -119,7 +119,7 @@ return [
         ],
         'NOME_EMPRESA' => [ //Nome da fonte pagadora
             'length' => 30,
-            'default' => 'FUNDO ESTADUAL DE CULTURA',
+            'default' => 'SECRETARIA DA CULTURA',
             'field_id' => null,
             'type' => 'string',
         ],
@@ -241,13 +241,13 @@ return [
         ],
         'INSCRICAO_NUMERO' => [ //CPF ou CNPJ da fonte pagadora, colocar com base no que foi informado no campo INSCRICAO_TIPO
             'length' => 14,
-            'default' => '01523484000116',
+            'default' => '07954555000111',
             'field_id' => null,
             'type' => 'int',
         ],        
         'CONVENIO_BB1' => [ // Número do convênio da fonte pagadora junto ao BB. Deve-ser verificar com secretaria da cultura
             'length' => 9,
-            'default' => '000273509',
+            'default' => '000293128',
             'field_id' => null,
             'type' => 'int',
         ],
@@ -283,13 +283,13 @@ return [
         ],
         'CONTA' => [ //Conta bancária da fonte pagadora
             'length' => 12,
-            'default' => '000000028726',
+            'default' => '000000028890',
             'field_id' => 'mapped',
             'type' => 'int',
         ],
         'CONTA_DIGITO' => [ //Digito da conta bancária da fonte pagadora
             'length' => 1,
-            'default' => '1',
+            'default' => 'X',
             'field_id' => 'mapped',
             'type' => 'int',
         ],
@@ -301,7 +301,7 @@ return [
         ],
         'NOME_EMPRESA' => [ // Nome da fonte pagadora
             'length' => 30,
-            'default' => 'FUNDO ESTADUAL DE CULTURA',
+            'default' => 'SECRETARIA DA CULTURA',
             'field_id' => 'mapped',
             'type' => 'string',
         ],
