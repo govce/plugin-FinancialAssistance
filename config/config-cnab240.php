@@ -798,7 +798,7 @@ return [
     ],
     'returnCode' => [
         'positive' =>[
-            '00' => 'Este código indica que o pagamento foi confirmado',
+            '00' => 'Pagamento Efetuado',
             '03' => 'Débito Autorizado pela Agência - Efetuado',
             'BD' => 'Inclusão Efetuada com Sucesso',
             'BE' => 'Alteração Efetuada com Sucesso',
