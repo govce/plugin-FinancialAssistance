@@ -1770,7 +1770,21 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                             $inscri = $this->getLineData($r, 33, 62);
 
                         }else{
-                            $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            $inscri = false;
+
+                            if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            } else {
+                                $query_insert_secultce_payment_history = "
+                                INSERT INTO secultce_payment_history 
+                                    (action, result) 
+                                VALUES 
+                                    ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
+        
+        
+                                $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                $stmt->execute();
+                            }
 
                             // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
 
@@ -1822,7 +1836,22 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                             $inscri = $this->getLineData($r, 33, 62);
 
                         }else{
-                            $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            $inscri = false;
+
+                            if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            } else {
+                                $query_insert_secultce_payment_history = "
+                                INSERT INTO secultce_payment_history 
+                                    (action, result) 
+                                VALUES 
+                                    ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
+        
+        
+                                $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                $stmt->execute();
+                            }
+
                             // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
                         }
                         $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
@@ -1870,7 +1899,22 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                              $inscri = $this->getLineData($r, 33, 62);
 
                          }else{
-                            $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            $inscri = false;
+
+                            if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            } else {
+                                $query_insert_secultce_payment_history = "
+                                INSERT INTO secultce_payment_history 
+                                    (action, result) 
+                                VALUES 
+                                    ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
+        
+        
+                                $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                $stmt->execute();
+                            }
+
                             // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
 
                          }
@@ -1895,51 +1939,52 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
         if(in_array($key_result, $check)) {
             foreach($value as $key_value => $r) {
                 if($key_value != "LOTE_STATUS") {
-                    $payment_id = 0;
-                    $file_id = $file->id;
-                    $status = $r['status'] ? 3: 4;
-                    $error = $status == 3 ? "": $r["reason"];
-                    $installment = 0;
-                    // 1. Verificar se a primeira parcela já foi paga
-                        // a. Se foi paga, atualize a parcela dois.
-                        // b. Se não foi paga, atualize a parcela um.
-                        // c. Se as duas já foram pagar, não fazer nada e botar no log.
-
-                    $secultce_payment = $app->repo("SecultCEPayment")->findBy([
-                        "registration" => $r["inscricao"]
-                    ], ['installment' => 'asc']);
-
-                    if ($secultce_payment[0]->status == 3 &&  $secultce_payment[1]->status == 3) {
-                        $app->log->info("\n" . $r["inscricao"] . " já possui as duas parcelas pagas");
-                        continue;
-                    } else if ($secultce_payment[0]->status != 3) {
-                        $payment_id = $secultce_payment[0]->id;
-                        $installment = 1;
-                    } else if ($secultce_payment[1]->status != 3) {
-                        $payment_id = $secultce_payment[1]->id;
-                        $installment = 2;
+                    if ($r["inscricao"] != false) {
+                        $payment_id = 0;
+                        $file_id = $file->id;
+                        $status = $r['status'] ? 3: 4;
+                        $error = $status == 3 ? "": $r["reason"];
+                        $installment = 0;
+                        // 1. Verificar se a primeira parcela já foi paga
+                            // a. Se foi paga, atualize a parcela dois.
+                            // b. Se não foi paga, atualize a parcela um.
+                            // c. Se as duas já foram pagar, não fazer nada e botar no log.
+    
+                        $secultce_payment = $app->repo("SecultCEPayment")->findBy([
+                            "registration" => $r["inscricao"]
+                        ], ['installment' => 'asc']);
+    
+                        if ($secultce_payment[0]->status == 3 &&  $secultce_payment[1]->status == 3) {
+                            $app->log->info("\n" . $r["inscricao"] . " já possui as duas parcelas pagas");
+                            continue;
+                        } else if ($secultce_payment[0]->status != 3) {
+                            $payment_id = $secultce_payment[0]->id;
+                            $installment = 1;
+                        } else if ($secultce_payment[1]->status != 3) {
+                            $payment_id = $secultce_payment[1]->id;
+                            $installment = 2;
+                        }
+    
+    
+                        $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date', return_file_id = $file_id WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
+                        
+                        $action = "retorno";
+                        $resultado = $r["reason"];
+                        $file_date = $return_date;
+    
+                        $query_insert_secultce_payment_history = "
+                            INSERT INTO secultce_payment_history 
+                                (payment_id, file_id, action, result, file_date) 
+                            VALUES 
+                                ($payment_id, $file_id, '$action', '$resultado', '$file_date');";
+    
+    
+                        $stmt = $app->em->getConnection()->prepare($query_update_secultce_payment);
+                        $stmt->execute();
+    
+                        $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                        $stmt->execute();
                     }
-
-
-                    $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date', return_file_id = $file_id WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
-                    
-                    $action = "retorno";
-                    $resultado = $r["reason"];
-                    $file_date = $return_date;
-
-                    $query_insert_secultce_payment_history = "
-                        INSERT INTO secultce_payment_history 
-                            (payment_id, file_id, action, result, file_date) 
-                        VALUES 
-                            ($payment_id, $file_id, '$action', '$resultado', '$file_date');";
-
-
-                    $stmt = $app->em->getConnection()->prepare($query_update_secultce_payment);
-                    $stmt->execute();
-
-                    $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
-                    $stmt->execute();
-
                 }
             }
         }
