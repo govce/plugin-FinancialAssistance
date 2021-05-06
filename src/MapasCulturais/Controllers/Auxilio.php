@@ -1643,6 +1643,16 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
         return $result;
     }
 
+    private function limpaCPF_CNPJ($valor)
+    {
+        $valor = trim($valor);
+        $valor = str_replace(".", "", $valor);
+        $valor = str_replace(",", "", $valor);
+        $valor = str_replace("-", "", $valor);
+        $valor = str_replace("/", "", $valor);
+        return $valor;
+    }
+
     private function importCnab240($opportunity, $file)
     {
 
@@ -1686,6 +1696,30 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
         $LOTE2_T = isset($data['LOTE_2']) ? max($data['LOTE_2']) : null;
         $LOTE3_T = isset($data['LOTE_3']) ? max($data['LOTE_3']) : null;
 
+        $query_select = "
+        SELECT
+            agents_data::json->'owner'->>'documento' as documento,
+            id
+        FROM
+            registration
+        WHERE 
+            status = 10
+            AND opportunity_id = {$opportunity->id};
+    ";
+
+        $stmt = $app->em->getConnection()->prepare($query_select);
+        $stmt->execute();
+        $registrations = $stmt->fetchAll();
+        $registrations_formmated = [];
+
+        foreach ($registrations as &$reg) {
+            $reg["documento"] = substr($this->limpaCPF_CNPJ($reg["documento"]), -11);
+        }
+
+        foreach ($registrations as $reg) {
+            $registrations_formmated[$reg["documento"]] = $reg;
+        }
+
         //Faz a busca nos dados do retorno e monta o array $result com todos os dados 
         foreach ($data as $key_data => $value) {
             $seg = null;
@@ -1721,6 +1755,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
 
                             //Pega o CPF da inscrição
                             $cpf_cnpj = $this->getLineData($r, 19, 31);
+                            $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
                             $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
 
                             //Firmata o CPF ou CNPJ
@@ -1732,7 +1767,24 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                             } elseif ($this->getLineData($r, 33, 62) != "") {
                                 $inscri = $this->getLineData($r, 33, 62);
                             } else {
-                                $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like '%$cpf_cnpj%' AND opportunity_id = {$opportunity->id}");
+                                $inscri = false;
+
+                                if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                    $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                                } else {
+                                    $query_insert_secultce_payment_history = "
+                                INSERT INTO secultce_payment_history 
+                                    (action, result) 
+                                VALUES 
+                                    ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
+
+
+                                    $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                    $stmt->execute();
+                                }
+
+                                // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
+
                             }
                             $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
                         }
@@ -1765,6 +1817,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
 
                             //Pega o CPF da inscrição
                             $cpf_cnpj = $this->getLineData($r, 19, 31);
+                            $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
                             $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
 
                             //Firmata o CPF ou CNPJ
@@ -1776,7 +1829,23 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                             } elseif ($this->getLineData($r, 33, 62) != "") {
                                 $inscri = $this->getLineData($r, 33, 62);
                             } else {
-                                $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like '%$cpf_cnpj%' AND opportunity_id = {$opportunity->id}");
+                                $inscri = false;
+
+                                if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                    $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                                } else {
+                                    $query_insert_secultce_payment_history = "
+                                INSERT INTO secultce_payment_history 
+                                    (action, result) 
+                                VALUES 
+                                    ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
+
+
+                                    $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                    $stmt->execute();
+                                }
+
+                                // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
                             }
                             $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
                         }
@@ -1808,7 +1877,7 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
 
                             //Pega o CPF da inscrição
                             $cpf_cnpj = $this->getLineData($r, 19, 31);
-                            $cpf_cnpj_unformatted = $this->getLineData($r, 19, 31);
+                            $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
                             $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
 
                             //Firmata o CPF ou CNPJ
@@ -1820,7 +1889,24 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                             } elseif ($this->getLineData($r, 33, 62) != "") {
                                 $inscri = $this->getLineData($r, 33, 62);
                             } else {
-                                $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
+                                $inscri = false;
+
+                                if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                    $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                                } else {
+                                    $query_insert_secultce_payment_history = "
+                                INSERT INTO secultce_payment_history 
+                                    (action, result) 
+                                VALUES 
+                                    ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
+
+
+                                    $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                    $stmt->execute();
+                                }
+
+                                // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
+
                             }
                             $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
                         }
@@ -1843,51 +1929,52 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             if (in_array($key_result, $check)) {
                 foreach ($value as $key_value => $r) {
                     if ($key_value != "LOTE_STATUS") {
-                        $payment_id = 0;
-                        $file_id = $file->id;
-                        $status = $r['status'] ? 3 : 4;
-                        $error = $status == 3 ? "" : $r["reason"];
-                        $installment = 0;
-                        // 1. Verificar se a primeira parcela já foi paga
-                        // a. Se foi paga, atualize a parcela dois.
-                        // b. Se não foi paga, atualize a parcela um.
-                        // c. Se as duas já foram pagar, não fazer nada e botar no log.
-                        var_dump($app->repo("SecultCEPayment")->findBy(["registration"]));
-                        die();
-                        $secultce_payment = $app->repo("SecultCEPayment")->findBy([
-                            "registration" => $r["inscricao"]
-                        ], ['installment' => 'asc']);
+                        if ($r["inscricao"] != false) {
+                            $payment_id = 0;
+                            $file_id = $file->id;
+                            $status = $r['status'] ? 3 : 4;
+                            $error = $status == 3 ? "" : $r["reason"];
+                            $installment = 0;
+                            // 1. Verificar se a primeira parcela já foi paga
+                            // a. Se foi paga, atualize a parcela dois.
+                            // b. Se não foi paga, atualize a parcela um.
+                            // c. Se as duas já foram pagar, não fazer nada e botar no log.
 
-                        if ($secultce_payment[0]->status == 3 &&  $secultce_payment[1]->status == 3) {
-                            $app->log->info("\n" . $r["inscricao"] . " já possui as duas parcelas pagas");
-                            continue;
-                        } else if ($secultce_payment[0]->status != 3) {
-                            $payment_id = $secultce_payment[0]->id;
-                            $installment = 1;
-                        } else if ($secultce_payment[1]->status != 3) {
-                            $payment_id = $secultce_payment[1]->id;
-                            $installment = 2;
+                            $secultce_payment = $app->repo("SecultCEPayment")->findBy([
+                                "registration" => $r["inscricao"]
+                            ], ['installment' => 'asc']);
+
+                            if ($secultce_payment[0]->status == 3 &&  $secultce_payment[1]->status == 3) {
+                                $app->log->info("\n" . $r["inscricao"] . " já possui as duas parcelas pagas");
+                                continue;
+                            } else if ($secultce_payment[0]->status != 3) {
+                                $payment_id = $secultce_payment[0]->id;
+                                $installment = 1;
+                            } else if ($secultce_payment[1]->status != 3) {
+                                $payment_id = $secultce_payment[1]->id;
+                                $installment = 2;
+                            }
+
+
+                            $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date', return_file_id = $file_id WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
+
+                            $action = "retorno";
+                            $resultado = $r["reason"];
+                            $file_date = $return_date;
+
+                            $query_insert_secultce_payment_history = "
+                            INSERT INTO secultce_payment_history 
+                                (payment_id, file_id, action, result, file_date) 
+                            VALUES 
+                                ($payment_id, $file_id, '$action', '$resultado', '$file_date');";
+
+
+                            $stmt = $app->em->getConnection()->prepare($query_update_secultce_payment);
+                            $stmt->execute();
+
+                            $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                            $stmt->execute();
                         }
-
-
-                        $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date', return_file_id = $file_id WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
-
-                        $action = "retorno";
-                        $resultado = $r["reason"];
-                        $file_date = $return_date;
-
-                        $query_insert_secultce_payment_history = "
-                        INSERT INTO secultce_payment_history 
-                            (payment_id, file_id, action, result, file_date) 
-                        VALUES 
-                            ($payment_id, $file_id, '$action', '$resultado', '$file_date');";
-
-
-                        $stmt = $app->em->getConnection()->prepare($query_update_secultce_payment);
-                        $stmt->execute();
-
-                        $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
-                        $stmt->execute();
                     }
                 }
             }
