@@ -1640,6 +1640,15 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
     return $result;
   }
 
+  private function limpaCPF_CNPJ($valor){
+    $valor = trim($valor);
+    $valor = str_replace(".", "", $valor);
+    $valor = str_replace(",", "", $valor);
+    $valor = str_replace("-", "", $valor);
+    $valor = str_replace("/", "", $valor);
+    return $valor;
+   }
+
   private function importCnab240($opportunity, $file){   
 
     $app = App::i();
@@ -1684,7 +1693,31 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
     $LOTE1_T = isset($data['LOTE_1']) ? max($data['LOTE_1']) : null;
     $LOTE2_T = isset($data['LOTE_2']) ? max($data['LOTE_2']) : null;
     $LOTE3_T = isset($data['LOTE_3']) ? max($data['LOTE_3']) : null;
-    
+
+    $query_select = "
+        SELECT
+            agents_data::json->'owner'->>'documento' as documento,
+            id
+        FROM
+            registration
+        WHERE 
+            status = 10
+            AND opportunity_id = {$opportunity->id};
+    ";
+
+    $stmt = $app->em->getConnection()->prepare($query_select);
+    $stmt->execute();
+    $registrations = $stmt->fetchAll();
+    $registrations_formmated = [];
+
+    foreach($registrations as &$reg) {
+        $reg["documento"] = substr($this->limpaCPF_CNPJ($reg["documento"]), -11);
+    }
+
+    foreach($registrations as $reg) {
+        $registrations_formmated[$reg["documento"]] = $reg;
+    }
+
     //Faz a busca nos dados do retorno e monta o array $result com todos os dados 
     foreach($data as $key_data => $value){
         $seg = null;
@@ -1737,7 +1770,9 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                             $inscri = $this->getLineData($r, 33, 62);
 
                         }else{
-                            $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
+                            $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+
+                            // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
 
                         }
                         $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
@@ -1787,8 +1822,8 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                             $inscri = $this->getLineData($r, 33, 62);
 
                         }else{
-                            $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
-
+                            $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
                         }
                         $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
                     }
@@ -1835,7 +1870,8 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                              $inscri = $this->getLineData($r, 33, 62);
 
                          }else{
-                            $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
+                            $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
 
                          }
                          $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
