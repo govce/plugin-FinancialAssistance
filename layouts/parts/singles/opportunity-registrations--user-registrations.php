@@ -571,7 +571,8 @@ if (isset($msg['mensagem'])) {
                             <?php endif; ?>
                             <br>
                             <div>
-                                <?php if (isset($data[0]['erro_pg_1'])) : ?>
+
+                                <?php if (isset($data[0]['erro_pg_1']) && (($data[0]['erro_pg_1']) != '')) : ?>
                                     <div><b>Erro de pagamento da 1ª parcela: </b></div>
                                     <div>
                                         <label>
