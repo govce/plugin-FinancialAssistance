@@ -393,7 +393,9 @@ if (isset($msg['mensagem'])) {
             "756 - BANCOOB",
             "757 - BANCO KEB HANA DO BRASIL",
         ];
-
+        //VARIAVEIS DE VALIDAÇÃO DO PERÍODO DE ALTERAÇÃO DE DADOS BANCÁRIOS
+        $dataAtual = date("Y-m-d H:i:s", time());
+        $dataFimInscricao = '2021-05-11 23:59:59';
         ?>
         <table class="my-registrations">
             <caption><?php \MapasCulturais\i::_e("Minhas inscrições"); ?></caption>
@@ -411,7 +413,13 @@ if (isset($msg['mensagem'])) {
                     <th class="registration-status-col">
                         <?php \MapasCulturais\i::_e("Resultado"); ?>
                     </th>
-                    <?php if ($status_inscricao >= '10' && $resultado_inscricao == 'RECURSO APROVADO') : ?>
+                    <?php if ($dataAtual <= $dataFimInscricao) : ?>
+                        <?php if ($status_inscricao >= '10' && $resultado_inscricao == 'RECURSO APROVADO') : ?>
+                            <th class="registration-status-col">
+                                <?php \MapasCulturais\i::_e("Dados Bacários"); ?>
+                            </th>
+                        <?php endif; ?>
+                    <?php else : ?>
                         <th class="registration-status-col">
                             <?php \MapasCulturais\i::_e("Dados Bacários"); ?>
                         </th>
@@ -467,12 +475,19 @@ if (isset($msg['mensagem'])) {
                             <?php $this->applyTemplateHook('user-registration-table--registration--status', 'end', $reg_args); ?>
                         </td>
                         <?php $this->applyTemplateHook('user-registration-table--registration', 'end', $reg_args); ?>
-                        <?php if ($status_inscricao >= '10' && $resultado_inscricao == 'RECURSO APROVADO') : ?>
+                        <?php if ($dataAtual <= $dataFimInscricao) : ?>
+                            <?php if ($status_inscricao >= '10' && $resultado_inscricao == 'RECURSO APROVADO') : ?>
+                                <td class="registration-status-col">
+                                    <?php $this->applyTemplateHook('user-registration-table--registration--status', 'begin', $reg_args); ?>
+                                    <br>
+                                    <a class="btn btn-small btn-primary" ng-click="editbox.open('report-evaluation-auxilioEventos-options-dados', $event)" rel="noopener noreferrer">Ver Dados</a>
+                                    <?php $this->applyTemplateHook('user-registration-table--registration--status', 'end', $reg_args); ?>
+                                </td>
+                                <?php $this->applyTemplateHook('user-registration-table--registration', 'end', $reg_args); ?>
+                            <?php endif; ?>
+                        <?php else : ?>
                             <td class="registration-status-col">
-                                <?php $this->applyTemplateHook('user-registration-table--registration--status', 'begin', $reg_args); ?>
-                                <br>
-                                <a class="btn btn-small btn-primary" ng-click="editbox.open('report-evaluation-auxilioEventos-options-dados', $event)" rel="noopener noreferrer">Ver Dados</a>
-                                <?php $this->applyTemplateHook('user-registration-table--registration--status', 'end', $reg_args); ?>
+                                <p>Período de aleração de dados bancários encerrado.</p>
                             </td>
                             <?php $this->applyTemplateHook('user-registration-table--registration', 'end', $reg_args); ?>
                         <?php endif; ?>
@@ -601,67 +616,70 @@ if (isset($msg['mensagem'])) {
             </form>
         </edit-box>
         <!-- BOTÃO DE EDIÇÃO E VISUALIZAÇÃO DE DADOS BANCÁRIOS -->
-        <?php if ($status_inscricao >= '10' && $resultado_inscricao == 'RECURSO APROVADO') : ?>
-            <edit-box id="report-evaluation-auxilioEventos-options-dados" position="top" title="<?php i::esc_attr_e('Visualizar e Editar Dados Bancários') ?>">
-                <form class="form-report-evaluation-auxilioEventos-options-dados" action="<?= $route ?>" method="POST">
-                    <!-- <label for="publishDate">Data publicação</label> -->
-                    <!-- <input type="date" name="publishDate" id="publishDate"> -->
-                    <?php
-                    $bancoSelecionado = $dataConsultaBancaria[0]['banco'];
-                    $contaSelecionada = $dataConsultaBancaria[0]['conta'];
-                    $agenciaSelecionada = $dataConsultaBancaria[0]['agencia'];
-                    $tipoContaSelecionada = json_decode($dataConsultaBancaria[0]['tipo_conta']);
-                    ?>
-                    <div>
-                        <input type="hidden" name="num_inscricao" value="<?php echo ($registration_id); ?>" />
-                    </div>
-                    <div>
-                        <label for="mail"><b>BANCO: </b></label>
-                        <select name="bank" id="bank">
-                            <?php foreach ($listaBancos as $b) : ?>
-                                <?php if ($b === $bancoSelecionado) : ?>
-                                    <option value="<?php echo ($b) ?>" selected><?php echo ($b) ?></option>
-                                <?php else : ?>
-                                    <option value="<?php echo ($b) ?>"><?php echo ($b) ?></option>
+        <?php if ($dataAtual <= $dataFimInscricao) : ?>
+            <?php if ($status_inscricao >= '10' && $resultado_inscricao == 'RECURSO APROVADO') : ?>
+                <edit-box id="report-evaluation-auxilioEventos-options-dados" position="top" title="<?php i::esc_attr_e('Visualizar e Editar Dados Bancários') ?>">
+                    <form class="form-report-evaluation-auxilioEventos-options-dados" action="<?= $route ?>" method="POST">
+                        <!-- <label for="publishDate">Data publicação</label> -->
+                        <!-- <input type="date" name="publishDate" id="publishDate"> -->
+                        <?php
+                        $bancoSelecionado = $dataConsultaBancaria[0]['banco'];
+                        $contaSelecionada = $dataConsultaBancaria[0]['conta'];
+                        $agenciaSelecionada = $dataConsultaBancaria[0]['agencia'];
+                        $tipoContaSelecionada = json_decode($dataConsultaBancaria[0]['tipo_conta']);
+                        ?>
+                        <div>
+                            <input type="hidden" name="num_inscricao" value="<?php echo ($registration_id); ?>" />
+                        </div>
+                        <div>
+                            <label for="mail"><b>BANCO: </b></label>
+                            <select name="bank" id="bank">
+                                <?php foreach ($listaBancos as $b) : ?>
+                                    <?php if ($b === $bancoSelecionado) : ?>
+                                        <option value="<?php echo ($b) ?>" selected><?php echo ($b) ?></option>
+                                    <?php else : ?>
+                                        <option value="<?php echo ($b) ?>"><?php echo ($b) ?></option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="mail"><b>NÚMERO DA AGÊNCIA COM O DÍGITO: </b></label>
+                            <input type="hiden" name="agencia" value="<?php echo ($agenciaSelecionada) ?>"></input>
+                        </div>
+                        <div>
+                            <label for="mail"><b>NÚMERO DA CONTA COM O DÍGITO: </b></label>
+                            <input type="hiden" name="conta" value="<?php echo ($contaSelecionada) ?>"></input>
+                        </div>
+                        <div>
+                            <label for="mail"><b>TIPO DE CONTA BANCÁRIA: </b></label>
+                            <select name="contaTipe" id="contaTipe">
+                                <?php if ($tipoContaSelecionada[0] == 'Conta poupança') : ?>
+                                    <option value='Conta poupança' selected><?php echo ($tipoContaSelecionada[0]) ?></option>
+                                    <option value='Conta corrente'>Conta corrente</option>
+                                <?php elseif ($tipoContaSelecionada[0] == 'Conta corrente') : ?>
+                                    <option value='Conta corrente' selected><?php echo ($tipoContaSelecionada[0]) ?></option>
+                                    <option value='Conta poupança'>Conta poupança</option>
                                 <?php endif; ?>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="mail"><b>NÚMERO DA AGÊNCIA COM O DÍGITO: </b></label>
-                        <input type="hiden" name="agencia" value="<?php echo ($agenciaSelecionada) ?>"></input>
-                    </div>
-                    <div>
-                        <label for="mail"><b>NÚMERO DA CONTA COM O DÍGITO: </b></label>
-                        <input type="hiden" name="conta" value="<?php echo ($contaSelecionada) ?>"></input>
-                    </div>
-                    <div>
-                        <label for="mail"><b>TIPO DE CONTA BANCÁRIA: </b></label>
-                        <select name="contaTipe" id="contaTipe">
-                            <?php if ($tipoContaSelecionada[0] == 'Conta poupança') : ?>
-                                <option value='Conta poupança' selected><?php echo ($tipoContaSelecionada[0]) ?></option>
-                                <option value='Conta corrente'>Conta corrente</option>
-                            <?php elseif ($tipoContaSelecionada[0] == 'Conta corrente') : ?>
-                                <option value='Conta corrente' selected><?php echo ($tipoContaSelecionada[0]) ?></option>
-                                <option value='Conta poupança'>Conta poupança</option>
-                            <?php endif; ?>
-                        </select>
-                    </div>
-                    <br>
-                    <div>
-                        <button class="btn btn-primary download" type="submit">Salvar Dados</button>
-                        <button class="btn btn-default" ng-click="editbox.close('report-evaluation-auxilioEventos-options-dados', $event)" type="button">Cancelar</button>
-                    </div>
-                    <br>
-                    <!-- <div style="background-color: green;">
+                            </select>
+                        </div>
+                        <br>
+                        <div>
+                            <button class="btn btn-primary download" type="submit">Salvar Dados</button>
+                            <button class="btn btn-default" ng-click="editbox.close('report-evaluation-auxilioEventos-options-dados', $event)" type="button">Cancelar</button>
+                        </div>
+                        <br>
+                        <!-- <div style="background-color: green;">
                         <p style="color:white; text-align: center;"><b>Dados atualizados com sucesso!</b></p>
                     </div>
                     <div style="background-color: red;">
                         <p style="color:white; text-align: center;"><b>Não foi possível atualizar os dados. Por favor, contate o suporte!</b></p>
                     </div> -->
-                </form>
-            </edit-box>
+                    </form>
+                </edit-box>
+            <?php endif; ?>
         <?php endif; ?>
+        <!-- COLUNA PADRÃO SEM BOTÕES -->
     <?php else : ?>
         <?php if ($registrations) : ?>
             <table class="my-registrations">
