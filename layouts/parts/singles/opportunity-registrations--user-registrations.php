@@ -105,6 +105,8 @@ if (isset($msg['mensagem'])) {
         //CONSULTA DE DADOS BANCÁRIOS
         $sqlConsultaBancaria = "
             select distinct
+                r.agents_data::jsonb->'owner'->>'nomeCompleto' as nome,
+	            r.agents_data::jsonb->'owner'->>'documento' as cpf,
                 rm_banco.value as banco,
                 rm_agencia.value as agencia,
                 rm_conta.value as conta,
@@ -136,6 +138,25 @@ if (isset($msg['mensagem'])) {
         $stmtConsultaBancaria->execute();
         $dataConsultaBancaria = $stmtConsultaBancaria->fetchAll();
 
+        //VALIDANDO CPF NO FILD DE CPF DO Registration META
+        $sqlValidCPF = "
+            select
+                R.ID as inscricao_valid,
+                rm.value as cpf_valid
+            
+            from 
+                public.registration as r
+                inner join public.registration_meta as rm
+                    on rm.object_id = r.id
+            where 
+                r.opportunity_id = 2852
+                and r.status = 10
+                and rm.key = 'field_26519'
+                and r.id = $registration_id
+        ";
+        $stmtValidCPF = $app->em->getConnection()->prepare($sqlValidCPF);
+        $stmtValidCPF->execute();
+        $dataValidCPF = $stmtValidCPF->fetchAll();
 
         //LISTA DE BANCOS DISPONÍVEIS                
         $listaBancos = [
@@ -623,6 +644,14 @@ if (isset($msg['mensagem'])) {
                         <!-- <label for="publishDate">Data publicação</label> -->
                         <!-- <input type="date" name="publishDate" id="publishDate"> -->
                         <?php
+                        $validCPF = "";
+                        if (isset($dataValidCPF[0]['cpf_valid']) && $dataValidCPF[0]['cpf_valid'] != "") {
+                            $validCPF .= $dataValidCPF[0]['cpf_valid'];
+                        } else {
+                            $validCPF = "";
+                        }
+                        $nomeSelecionado = $dataConsultaBancaria[0]['nome'];
+                        $cpfSelecionado = $dataConsultaBancaria[0]['cpf'];
                         $bancoSelecionado = $dataConsultaBancaria[0]['banco'];
                         $contaSelecionada = $dataConsultaBancaria[0]['conta'];
                         $agenciaSelecionada = $dataConsultaBancaria[0]['agencia'];
@@ -630,6 +659,24 @@ if (isset($msg['mensagem'])) {
                         ?>
                         <div>
                             <input type="hidden" name="num_inscricao" value="<?php echo ($registration_id); ?>" />
+                        </div>
+                        <div>
+                            <input type="hidden" name="validCPF" value="<?php echo ($validCPF); ?>" />
+                        </div>
+                        <div>
+                            <label for="mail"><b>NOME COMPLETO: </b></label>
+                            <input type="hiden" name="nomeCompleto" value="<?php echo ($nomeSelecionado) ?>"></input>
+                        </div>
+                        <div>
+                            <script>
+                                var cpf = document.querySelector("#cpf");
+
+                                cpf.addEventListener("blur", function() {
+                                    if (cpf.value) cpf.value = cpf.value.match(/.{1,3}/g).join(".").replace(/\.(?=[^.]*$)/, "-");
+                                });
+                            </script>
+                            <label for="mail"><b>CPF: </b></label>
+                            <input type="hiden" id="cpf" name="cpf" value="<?php echo ($cpfSelecionado) ?>" maxlength="11"></input>
                         </div>
                         <div>
                             <label for="mail"><b>BANCO: </b></label>

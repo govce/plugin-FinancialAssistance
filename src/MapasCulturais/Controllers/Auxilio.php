@@ -2002,8 +2002,8 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
         $agencia = $this->data['agencia'];
         $tipoConta = json_encode($this->data['contaTipe']);
         $conta = $this->data['conta'];
-        //var_dump($tipoConta);
-        //die();
+        $cpf = $this->data['cpf'];
+        $nomeCompleto = $this->data['nomeCompleto'];
         $updateBanco = "
             update 
                 public.registration_meta
@@ -2047,6 +2047,100 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                 and key = 'field_26528'
                 and REPLACE(key, 'field_', '')::int in (select id from public.registration_field_configuration where id = 26528 and opportunity_id = 2852)
         ";
+
+        //-------------------------------------- ALTERAÇÃO DE NOME COMPLETO E CPF --------------------------------------------------------
+        $updateCPFAgentMeta = "
+            update
+                agent_meta
+            set
+                value = '$cpf'
+            where
+                key = 'documento'
+                and object_id in(select 
+                                    agent_id 
+                                from 
+                                    public.registration as r
+                                        left join public.agent_meta as am
+                                            on am.object_id = r.agent_id
+                                where 
+                                    r.opportunity_id = 2852	
+                                    and r.status = 10
+                                    and r.id = $num_inscricao)
+        ";
+        $updateCPFRegistration = "
+            update
+                registration
+            set
+                agents_data = jsonb_set(agents_data::jsonb, '{owner, documento}', '$asp$cpf$asp', true)
+            where
+                id = $num_inscricao
+                and opportunity_id = 2852
+                and status = 10
+        ";
+
+        $updateCPFRegistrationMeta = "
+            update 
+                registration_meta
+            set 
+                value = '$cpf'
+            where
+                key = 'field_26519'
+                and REPLACE(key, 'field_', '')::int in (select id from public.registration_field_configuration where id = 26519 and opportunity_id = 2852)
+                and object_id in(select r.id from registration as r where r.opportunity_id = 2852 and r.status = 10 and r.id = $num_inscricao)
+    
+        ";
+
+        $updateNomeAgentMeta = "
+            update
+                agent_meta
+            set
+                value = '$nomeCompleto'
+            where
+                key = 'nomeCompleto'
+                and object_id in(select 
+                                    agent_id 
+                                from 
+                                    public.registration as r
+                                        left join public.agent_meta as am
+                                            on am.object_id = r.agent_id
+                                where 
+                                    r.opportunity_id = 2852	
+                                    and r.status = 10
+                                    and r.id = $num_inscricao)
+        ";
+        $updateNomeRegistration = "
+            update
+                registration
+            set
+                agents_data = jsonb_set(agents_data::jsonb, '{owner, nomeCompleto}', '$asp$nomeCompleto$asp', true)
+            where
+                id = $num_inscricao
+                and opportunity_id = 2852
+                and status = 10
+        ";
+        $updateNomeRegistrationMeta = "
+            update 
+                registration_meta
+            set 
+                value = '$nomeCompleto'
+            where
+                key = 'field_26508'
+                and REPLACE(key, 'field_', '')::int in (select id from public.registration_field_configuration where id = 26508 and opportunity_id = 2852)
+                and object_id in(select r.id from registration as r where r.opportunity_id = 2852 and r.status = 10 and r.id = $num_inscricao)
+        ";
+        //------------------------------------------------------------------------------------------------------------------------------------------
+        $stmt = $app->em->getConnection()->prepare($updateCPFAgentMeta);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateCPFRegistration);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateCPFRegistrationMeta);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateNomeAgentMeta);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateNomeRegistration);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateNomeRegistrationMeta);
+        $stmt->execute();
         $stmt = $app->em->getConnection()->prepare($updateBanco);
         $stmt->execute();
         $stmt = $app->em->getConnection()->prepare($updateAgencia);
