@@ -668,7 +668,7 @@ if (isset($msg['mensagem'])) {
                             <input type="hiden" name="nomeCompleto" value="<?php echo ($nomeSelecionado) ?>"></input>
                         </div>
                         <div>
-                            <script>
+                            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.15/jquery.mask.min.js">
                                 var cpf = document.querySelector("#cpf");
 
                                 cpf.addEventListener("blur", function() {
@@ -676,7 +676,7 @@ if (isset($msg['mensagem'])) {
                                 });
                             </script>
                             <label for="mail"><b>CPF: </b></label>
-                            <input type="hiden" id="cpf" name="cpf" value="<?php echo ($cpfSelecionado) ?>" maxlength="11"></input>
+                            <input type="hiden" id="cpf" name="cpf" onkeypress="$(this).mask('000.000.000-00');" value="<?php echo ($cpfSelecionado) ?>" maxlength="11"></input>
                         </div>
                         <div>
                             <label for="mail"><b>BANCO: </b></label>
