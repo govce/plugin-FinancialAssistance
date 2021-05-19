@@ -1339,11 +1339,11 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             $dql .= "AND se.registration IN ($registrations_string)";
         }
 
-      if ($data["remakePayment"]) {
-          $dql .= "AND se.status IN (0, 1, 2, 4)";
-      } else {
-          $dql .= "AND se.status = 0";
-      }
+        if ($data["remakePayment"]) {
+            $dql .= "AND se.status IN (0, 1, 2, 4)";
+        } else {
+            $dql .= "AND se.status = 0";
+        }
         // $dql .= ";";
 
         $query = $app->em->createQuery($dql);
@@ -1517,43 +1517,45 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
         }
     }
 
-  public function GET_importFileCnab240() {   
-        
-    $this->requireAuthentication();
+    public function GET_importFileCnab240()
+    {
 
-    $app = App::i();
+        $this->requireAuthentication();
 
-    $opportunity_id = $this->data['opportunity'] ?? 0;
-    $file_id = $this->data['file'] ?? 0;
+        $app = App::i();
 
-    $opportunity = $app->repo('Opportunity')->find($opportunity_id);
+        $opportunity_id = $this->data['opportunity'] ?? 0;
+        $file_id = $this->data['file'] ?? 0;
 
-    if (!$opportunity) {
-        echo "Opportunidade de id $opportunity_id não encontrada";
-    }
+        $opportunity = $app->repo('Opportunity')->find($opportunity_id);
 
-    $opportunity->checkPermission('@control');
-
-    $files = $opportunity->getFiles("cnab240-$opportunity_id");
-      
-    foreach ($files as $file) {
-        if ($file->id == $file_id) {                            
-            $this->importCnab240($opportunity, $file);
+        if (!$opportunity) {
+            echo "Opportunidade de id $opportunity_id não encontrada";
         }
-    }
 
-    return;
-  }
+        $opportunity->checkPermission('@control');
+
+        $files = $opportunity->getFiles("cnab240-$opportunity_id");
+
+        foreach ($files as $file) {
+            if ($file->id == $file_id) {
+                $this->importCnab240($opportunity, $file);
+            }
+        }
+
+        return;
+    }
 
     /**
      * Processa o retorno do CNAB240 e faz a validação de processado ou não
      */
-    private function validatedCanb($code, $seg, $cpf, $inscri, $lote){
+    private function validatedCanb($code, $seg, $cpf, $inscri, $lote)
+    {
         $returnCode = $returnCode = $this->config['config-import-cnab240']['returnCode'];
         $positive = $returnCode['positive'];
         $negative = $returnCode['negative'];
-        foreach($positive as $key => $value){
-            if($key === $code){
+        foreach ($positive as $key => $value) {
+            if ($key === $code) {
                 return [
                     //'seg' => $seg,
                     'lote' => $lote,
@@ -1565,8 +1567,8 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             }
         }
 
-        foreach($negative as $key => $value){
-            if($key === $code){
+        foreach ($negative as $key => $value) {
+            if ($key === $code) {
                 return [
                     'lote' => $lote,
                     'inscricao' => $inscri,
@@ -1581,120 +1583,120 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
     /**
      * Pega o registro dentro de uma determinada posição do CNAB240
      */
-    private function getLineData($line, $start, $end){
+    private function getLineData($line, $start, $end)
+    {
         $data = "";
-        $char = strlen($line);       
-        if(!empty($line)){
-            for($i=0; $i<$char; $i++){
-                if($i>=$start && $i<=$end){
+        $char = strlen($line);
+        if (!empty($line)) {
+            for ($i = 0; $i < $char; $i++) {
+                if ($i >= $start && $i <= $end) {
                     $data .= $line[$i];
-                    
                 }
             }
         }
         return trim($data);
     }
 
-  /**
-    * faz o mapeamento do CNAB20... separa os lotes, treiller e header
-   */
-  private function mappedCnab($file){
-    $stream = fopen($file,"r");
-    $result = [];
-    $countLine = 1;
-    while(!feof($stream)){
-        $linha = fgets($stream);
-        if(!empty($linha)){
-            $value = $this->getLineData($linha, 0, 7);
-            switch ($value) {
-                case '00100000':
-                    $result['HEADER_ARQ'][$countLine] = $countLine;
-                    $result['HEADER_DATA_ARQ'][$countLine] = $linha;
-                    break;
-                case '00100011':
-                case '00100013':
-                case '00100015':
-                    $result['LOTE_1'][$countLine] = $countLine;
-                    $result['LOTE_1_DATA'][$countLine] = $linha;
-                    break;
-                case '00100021':
-                case '00100023':
-                case '00100025':
-                    $result['LOTE_2'][$countLine] = $countLine;
-                    $result['LOTE_2_DATA'][$countLine] = $linha;
-                    break;
-                case '00100031':
-                case '00100033':
-                case '00100035':
-                    $result['LOTE_3'][$countLine] = $countLine;
-                    $result['LOTE_3_DATA'][$countLine] = $linha;
-                    break;
-                case '00199999':
-                    $result['TREILLER_ARQ'][$countLine] = $countLine;
-                    $result['TREILLER_DATA_ARQ'][$countLine] = $linha;
-                    break;                    
-            }
-        }
-        $countLine ++;
-    }
-    return $result;
-  }
-
-  private function limpaCPF_CNPJ($valor){
-    $valor = trim($valor);
-    $valor = str_replace(".", "", $valor);
-    $valor = str_replace(",", "", $valor);
-    $valor = str_replace("-", "", $valor);
-    $valor = str_replace("/", "", $valor);
-    return $valor;
-   }
-
-  private function importCnab240($opportunity, $file){   
-
-    $app = App::i();
-    $conn = $app->em->getConnection();
-    // $plugin = $app->plugins['AldirBlanc'];   
-    $processingDate = new DateTime();
-    $processingDate = $processingDate->format('Y-m-d');    
-
-    $return_date = null;
-
-    $result = [];
-    $countLine = 1;
-    $countSeg = 1;
-    $field_labelMap = [];
-    $config = $returnCode = $this->config['config-import-cnab240']['configs'];
-    if($field = array_search($opportunity->id, $config['opportunitys'])){
-        if(is_string($field)){
-            foreach ($opportunity->registrationFieldConfigurations as $fields) {
-                if($fields->title == $field){
-                    $field_id = "field_" . $fields->id;
-
+    /**
+     * faz o mapeamento do CNAB20... separa os lotes, treiller e header
+     */
+    private function mappedCnab($file)
+    {
+        $stream = fopen($file, "r");
+        $result = [];
+        $countLine = 1;
+        while (!feof($stream)) {
+            $linha = fgets($stream);
+            if (!empty($linha)) {
+                $value = $this->getLineData($linha, 0, 7);
+                switch ($value) {
+                    case '00100000':
+                        $result['HEADER_ARQ'][$countLine] = $countLine;
+                        $result['HEADER_DATA_ARQ'][$countLine] = $linha;
+                        break;
+                    case '00100011':
+                    case '00100013':
+                    case '00100015':
+                        $result['LOTE_1'][$countLine] = $countLine;
+                        $result['LOTE_1_DATA'][$countLine] = $linha;
+                        break;
+                    case '00100021':
+                    case '00100023':
+                    case '00100025':
+                        $result['LOTE_2'][$countLine] = $countLine;
+                        $result['LOTE_2_DATA'][$countLine] = $linha;
+                        break;
+                    case '00100031':
+                    case '00100033':
+                    case '00100035':
+                        $result['LOTE_3'][$countLine] = $countLine;
+                        $result['LOTE_3_DATA'][$countLine] = $linha;
+                        break;
+                    case '00199999':
+                        $result['TREILLER_ARQ'][$countLine] = $countLine;
+                        $result['TREILLER_DATA_ARQ'][$countLine] = $linha;
+                        break;
                 }
             }
-        }else{
-            $field_id = "field_" .$field;
+            $countLine++;
+        }
+        return $result;
+    }
 
+    private function limpaCPF_CNPJ($valor)
+    {
+        $valor = trim($valor);
+        $valor = str_replace(".", "", $valor);
+        $valor = str_replace(",", "", $valor);
+        $valor = str_replace("-", "", $valor);
+        $valor = str_replace("/", "", $valor);
+        return $valor;
+    }
+
+    private function importCnab240($opportunity, $file)
+    {
+
+        $app = App::i();
+        $conn = $app->em->getConnection();
+        // $plugin = $app->plugins['AldirBlanc'];   
+        $processingDate = new DateTime();
+        $processingDate = $processingDate->format('Y-m-d');
+
+        $return_date = null;
+
+        $result = [];
+        $countLine = 1;
+        $countSeg = 1;
+        $field_labelMap = [];
+        $config = $returnCode = $this->config['config-import-cnab240']['configs'];
+        if ($field = array_search($opportunity->id, $config['opportunitys'])) {
+            if (is_string($field)) {
+                foreach ($opportunity->registrationFieldConfigurations as $fields) {
+                    if ($fields->title == $field) {
+                        $field_id = "field_" . $fields->id;
+                    }
+                }
+            } else {
+                $field_id = "field_" . $field;
+            }
+        } else {
+            echo "Essa oportunidade nao é uma oportunidade configurada";
+            exit;
         }
 
-    }else{
-        echo "Essa oportunidade nao é uma oportunidade configurada";
-        exit;
-    }
-    
-    $data = $this->mappedCnab($file->getPath());
-    
-    //Pega a linha do header do lote
-    $LOTE1_H = isset($data['LOTE_1']) ? min($data['LOTE_1']) : null;
-    $LOTE2_H = isset($data['LOTE_2']) ? min($data['LOTE_2']) : null;
-    $LOTE3_H = isset($data['LOTE_3']) ? min($data['LOTE_3']) : null;
+        $data = $this->mappedCnab($file->getPath());
 
-    //Pega a linha do trailler do lote
-    $LOTE1_T = isset($data['LOTE_1']) ? max($data['LOTE_1']) : null;
-    $LOTE2_T = isset($data['LOTE_2']) ? max($data['LOTE_2']) : null;
-    $LOTE3_T = isset($data['LOTE_3']) ? max($data['LOTE_3']) : null;
+        //Pega a linha do header do lote
+        $LOTE1_H = isset($data['LOTE_1']) ? min($data['LOTE_1']) : null;
+        $LOTE2_H = isset($data['LOTE_2']) ? min($data['LOTE_2']) : null;
+        $LOTE3_H = isset($data['LOTE_3']) ? min($data['LOTE_3']) : null;
 
-    $query_select = "
+        //Pega a linha do trailler do lote
+        $LOTE1_T = isset($data['LOTE_1']) ? max($data['LOTE_1']) : null;
+        $LOTE2_T = isset($data['LOTE_2']) ? max($data['LOTE_2']) : null;
+        $LOTE3_T = isset($data['LOTE_3']) ? max($data['LOTE_3']) : null;
+
+        $query_select = "
         SELECT
             agents_data::json->'owner'->>'documento' as documento,
             id
@@ -1705,302 +1707,290 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
             AND opportunity_id = {$opportunity->id};
     ";
 
-    $stmt = $app->em->getConnection()->prepare($query_select);
-    $stmt->execute();
-    $registrations = $stmt->fetchAll();
-    $registrations_formmated = [];
+        $stmt = $app->em->getConnection()->prepare($query_select);
+        $stmt->execute();
+        $registrations = $stmt->fetchAll();
+        $registrations_formmated = [];
 
-    foreach($registrations as &$reg) {
-        $reg["documento"] = substr($this->limpaCPF_CNPJ($reg["documento"]), -11);
-    }
+        foreach ($registrations as &$reg) {
+            $reg["documento"] = substr($this->limpaCPF_CNPJ($reg["documento"]), -11);
+        }
 
-    foreach($registrations as $reg) {
-        $registrations_formmated[$reg["documento"]] = $reg;
-    }
+        foreach ($registrations as $reg) {
+            $registrations_formmated[$reg["documento"]] = $reg;
+        }
 
-    //Faz a busca nos dados do retorno e monta o array $result com todos os dados 
-    foreach($data as $key_data => $value){
-        $seg = null;
-        $cpf = null;
-        $inscri = null;
-        $lote = null;
-        if($key_data === "HEADER_DATA_ARQ"){
-            foreach($value as $key_r => $r){
-                //Valida o arquivo
-                $n = $this->getLineData($r, 230, 231);
-                $result['AQURIVO']['ARQUIVO_STATUS']  = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
-               
-            }
-        }else if($key_data === "LOTE_1_DATA"){
-            $cont = 1;
-            $lote = 'Corrente BB';                   
-            foreach($value as $key_r => $r){
-                if($key_r == $LOTE1_H){ 
-                    //Valida se o lote 1 esta válido
+        //Faz a busca nos dados do retorno e monta o array $result com todos os dados 
+        foreach ($data as $key_data => $value) {
+            $seg = null;
+            $cpf = null;
+            $inscri = null;
+            $lote = null;
+            if ($key_data === "HEADER_DATA_ARQ") {
+                foreach ($value as $key_r => $r) {
+                    //Valida o arquivo
                     $n = $this->getLineData($r, 230, 231);
-                    $result['LOTE_1']['LOTE_STATUS']  = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
+                    $result['AQURIVO']['ARQUIVO_STATUS']  = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
+                }
+            } else if ($key_data === "LOTE_1_DATA") {
+                $cont = 1;
+                $lote = 'Corrente BB';
+                foreach ($value as $key_r => $r) {
+                    if ($key_r == $LOTE1_H) {
+                        //Valida se o lote 1 esta válido
+                        $n = $this->getLineData($r, 230, 231);
+                        $result['LOTE_1']['LOTE_STATUS']  = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
+                    } elseif ($key_r == $LOTE1_T) {
+                    } else {
+                        $seg = $this->getLineData($r, 13, 13);
 
-                }elseif($key_r == $LOTE1_T){
-                } else { 
-                    $seg = $this->getLineData($r, 13, 13);
+                        if ($seg === "A") {
+                            //Valida as inscrições
+                            $return_date = $this->getLineData($r, 90, 100);
+                            $code = $this->getLineData($r, 230, 231);
+                            $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
+                        } elseif ($seg === "B") {
+                            //Pega o tipo de documento CPF ou CNPJ
+                            $tipo = $this->getLineData($r, 17, 17);
 
-                    if($seg === "A") {
-                        //Valida as inscrições
-                        $return_date = $this->getLineData($r, 90, 100);
-                        $code = $this->getLineData($r, 230, 231);
-                        $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
+                            //Pega o CPF da inscrição
+                            $cpf_cnpj = $this->getLineData($r, 19, 31);
+                            $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
+                            $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
 
-                    } elseif ($seg === "B") {
-                        //Pega o tipo de documento CPF ou CNPJ
-                        $tipo = $this->getLineData($r, 17, 17);
-                        
-                        //Pega o CPF da inscrição
-                        $cpf_cnpj = $this->getLineData($r, 19, 31);
-                        $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
-                        $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
-                        
-                        //Firmata o CPF ou CNPJ
-                        $cpf_cnpj = preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "\$1.\$2.\$3-\$4", substr($cpf_cnpj, -11));
+                            //Firmata o CPF ou CNPJ
+                            $cpf_cnpj = preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "\$1.\$2.\$3-\$4", substr($cpf_cnpj, -11));
 
-                        //Busca o número da inscrição
-                        if($this->getLineData($r, 210, 224) != ""){
-                            $inscri = $this->getLineData($r, 210, 224);
-
-                        }elseif($this->getLineData($r, 33, 62)!=""){
-                            $inscri = $this->getLineData($r, 33, 62);
-
-                        }else{
-                            $inscri = false;
-
-                            if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
-                                $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            //Busca o número da inscrição
+                            if ($this->getLineData($r, 210, 224) != "") {
+                                $inscri = $this->getLineData($r, 210, 224);
+                            } elseif ($this->getLineData($r, 33, 62) != "") {
+                                $inscri = $this->getLineData($r, 33, 62);
                             } else {
-                                $query_insert_secultce_payment_history = "
+                                $inscri = false;
+
+                                if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                    $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                                } else {
+                                    $query_insert_secultce_payment_history = "
                                 INSERT INTO secultce_payment_history 
                                     (action, result) 
                                 VALUES 
                                     ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
-        
-        
-                                $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
-                                $stmt->execute();
+
+
+                                    $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                    $stmt->execute();
+                                }
+
+                                // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
+
                             }
-
-                            // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
-
+                            $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
                         }
-                        $result['LOTE_1'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
-                    }
 
-                    if($seg === "B"){
-                        $cont ++;
-                    }
-                    
-                }
-            }
-            
-        }else if($key_data === "LOTE_2_DATA"){
-            
-            $cont = 1;
-            $lote = 'Poupança BB';                
-            foreach($value as $key_r => $r){
-                if($key_r == $LOTE2_H){ 
-                    //Valida se o lote 2 esta válido
-                    $n = $this->getLineData($r, 230, 231);
-                    $result['LOTE_2']['LOTE_STATUS'] = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
-
-                }elseif($key_r == $LOTE2_T){}else{ 
-                    $seg = $this->getLineData($r, 13, 13);
-
-                    if($seg === "A"){
-                        //Valida as inscrições
-                        $code = $this->getLineData($r, 230, 231);
-                        $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
-                    } elseif ($seg === "B") {
-                        // Pega o tipo de documento CPF ou CNPJ
-                        $tipo = $this->getLineData($r, 17, 17);
-                        
-                        //Pega o CPF da inscrição
-                        $cpf_cnpj = $this->getLineData($r, 19, 31);
-                        $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
-                        $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
-                        
-                        //Firmata o CPF ou CNPJ
-                        $cpf_cnpj = preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "\$1.\$2.\$3-\$4", substr($cpf_cnpj, -11));
-
-                        //Busca o número da inscrição
-                        if($this->getLineData($r, 210, 224) != ""){
-                            $inscri = $this->getLineData($r, 210, 224);
-
-                        }elseif($this->getLineData($r, 33, 62)!=""){
-                            $inscri = $this->getLineData($r, 33, 62);
-
-                        }else{
-                            $inscri = false;
-
-                            if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
-                                $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
-                            } else {
-                                $query_insert_secultce_payment_history = "
-                                INSERT INTO secultce_payment_history 
-                                    (action, result) 
-                                VALUES 
-                                    ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
-        
-        
-                                $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
-                                $stmt->execute();
-                            }
-
-                            // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
+                        if ($seg === "B") {
+                            $cont++;
                         }
-                        $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
                     }
-
-                    if($seg === "B"){
-                        $cont ++;
-                    }
-                    
                 }
-            }
-        }else if($key_data === "LOTE_3_DATA"){
-            $cont = 1;
-            $lote = 'Outros Bancos';               
-            foreach($value as $key_r => $r){
-                if($key_r == $LOTE3_H){ 
-                    //Valida se o lote 3 esta válido
-                    $n = $this->getLineData($r, 230, 231);
-                    $result['LOTE_3']['LOTE_STATUS'] = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
+            } else if ($key_data === "LOTE_2_DATA") {
 
-                }elseif($key_r == $LOTE3_T){}else{ 
-                    $seg = $this->getLineData($r, 13, 13);
+                $cont = 1;
+                $lote = 'Poupança BB';
+                foreach ($value as $key_r => $r) {
+                    if ($key_r == $LOTE2_H) {
+                        //Valida se o lote 2 esta válido
+                        $n = $this->getLineData($r, 230, 231);
+                        $result['LOTE_2']['LOTE_STATUS'] = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
+                    } elseif ($key_r == $LOTE2_T) {
+                    } else {
+                        $seg = $this->getLineData($r, 13, 13);
 
-                    if($seg === "A") {
-                        //Valida as inscrições
-                        $code = $this->getLineData($r, 230, 231);
-                        $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
-                    } elseif ($seg === "B") {
-                         //Pega o tipo de documento CPF ou CNPJ
-                         $tipo = $this->getLineData($r, 17, 17);
-                        
-                         //Pega o CPF da inscrição
-                         $cpf_cnpj = $this->getLineData($r, 19, 31);
-                         $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
-                         $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
-                         
-                         //Firmata o CPF ou CNPJ
-                         $cpf_cnpj = preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "\$1.\$2.\$3-\$4", substr($cpf_cnpj, -11));
+                        if ($seg === "A") {
+                            //Valida as inscrições
+                            $code = $this->getLineData($r, 230, 231);
+                            $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
+                        } elseif ($seg === "B") {
+                            // Pega o tipo de documento CPF ou CNPJ
+                            $tipo = $this->getLineData($r, 17, 17);
 
-                         //Busca o número da inscrição
-                         if($this->getLineData($r, 210, 224) != ""){
-                             $inscri = $this->getLineData($r, 210, 224);
+                            //Pega o CPF da inscrição
+                            $cpf_cnpj = $this->getLineData($r, 19, 31);
+                            $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
+                            $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
 
-                         }elseif($this->getLineData($r, 33, 62)!=""){
-                             $inscri = $this->getLineData($r, 33, 62);
+                            //Firmata o CPF ou CNPJ
+                            $cpf_cnpj = preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "\$1.\$2.\$3-\$4", substr($cpf_cnpj, -11));
 
-                         }else{
-                            $inscri = false;
-
-                            if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
-                                $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                            //Busca o número da inscrição
+                            if ($this->getLineData($r, 210, 224) != "") {
+                                $inscri = $this->getLineData($r, 210, 224);
+                            } elseif ($this->getLineData($r, 33, 62) != "") {
+                                $inscri = $this->getLineData($r, 33, 62);
                             } else {
-                                $query_insert_secultce_payment_history = "
+                                $inscri = false;
+
+                                if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                    $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                                } else {
+                                    $query_insert_secultce_payment_history = "
                                 INSERT INTO secultce_payment_history 
                                     (action, result) 
                                 VALUES 
                                     ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
-        
-        
-                                $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
-                                $stmt->execute();
+
+
+                                    $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                    $stmt->execute();
+                                }
+
+                                // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
                             }
+                            $result['LOTE_2'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
+                        }
 
-                            // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
-
-                         }
-                         $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
+                        if ($seg === "B") {
+                            $cont++;
+                        }
                     }
-
-                    if($seg === "B"){
-                        $cont ++;
-                    }
-                    
                 }
-            }
-        }else if($key_data === "TREILLER_DATA_ARQ"){}
-    }
-  
-    //Arrays que serão realmente avaliados no processmento do retorno
-    $check = ['LOTE_1', 'LOTE_2', 'LOTE_3'];
+            } else if ($key_data === "LOTE_3_DATA") {
+                $cont = 1;
+                $lote = 'Outros Bancos';
+                foreach ($value as $key_r => $r) {
+                    if ($key_r == $LOTE3_H) {
+                        //Valida se o lote 3 esta válido
+                        $n = $this->getLineData($r, 230, 231);
+                        $result['LOTE_3']['LOTE_STATUS'] = $this->validatedCanb($n, $seg, $cpf, $inscri, $lote);
+                    } elseif ($key_r == $LOTE3_T) {
+                    } else {
+                        $seg = $this->getLineData($r, 13, 13);
 
-    $return_date = DateTime::createFromFormat('dmY', $return_date)->format('Y-m-d H:i:s');
-    
-    foreach($result as $key_result => $value) {
-        if(in_array($key_result, $check)) {
-            foreach($value as $key_value => $r) {
-                if($key_value != "LOTE_STATUS") {
-                    if ($r["inscricao"] != false) {
-                        $payment_id = 0;
-                        $file_id = $file->id;
-                        $status = $r['status'] ? 3: 4;
-                        $error = $status == 3 ? "": $r["reason"];
-                        $installment = 0;
-                        // 1. Verificar se a primeira parcela já foi paga
+                        if ($seg === "A") {
+                            //Valida as inscrições
+                            $code = $this->getLineData($r, 230, 231);
+                            $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf, $inscri, $lote);
+                        } elseif ($seg === "B") {
+                            //Pega o tipo de documento CPF ou CNPJ
+                            $tipo = $this->getLineData($r, 17, 17);
+
+                            //Pega o CPF da inscrição
+                            $cpf_cnpj = $this->getLineData($r, 19, 31);
+                            $cpf_cnpj_unformatted = substr($this->getLineData($r, 19, 31), -11);
+                            $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj, $inscri, $lote);
+
+                            //Firmata o CPF ou CNPJ
+                            $cpf_cnpj = preg_replace("/(\d{3})(\d{3})(\d{3})(\d{2})/", "\$1.\$2.\$3-\$4", substr($cpf_cnpj, -11));
+
+                            //Busca o número da inscrição
+                            if ($this->getLineData($r, 210, 224) != "") {
+                                $inscri = $this->getLineData($r, 210, 224);
+                            } elseif ($this->getLineData($r, 33, 62) != "") {
+                                $inscri = $this->getLineData($r, 33, 62);
+                            } else {
+                                $inscri = false;
+
+                                if (array_key_exists($cpf_cnpj_unformatted, $registrations_formmated)) {
+                                    $inscri = $registrations_formmated[$cpf_cnpj_unformatted]["id"];
+                                } else {
+                                    $query_insert_secultce_payment_history = "
+                                INSERT INTO secultce_payment_history 
+                                    (action, result) 
+                                VALUES 
+                                    ('retorno-nao-encontrado', '$cpf_cnpj_unformatted');";
+
+
+                                    $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                                    $stmt->execute();
+                                }
+
+                                // $inscri = $conn->fetchColumn("select id from registration where agents_data::json->'owner'->>'documento' like any(array['%$cpf_cnpj%', '%$cpf_cnpj_unformatted%']) AND opportunity_id = {$opportunity->id}");
+
+                            }
+                            $result['LOTE_3'][$cont] = $this->validatedCanb($code, $seg, $cpf_cnpj,  $inscri, $lote);
+                        }
+
+                        if ($seg === "B") {
+                            $cont++;
+                        }
+                    }
+                }
+            } else if ($key_data === "TREILLER_DATA_ARQ") {
+            }
+        }
+
+        //Arrays que serão realmente avaliados no processmento do retorno
+        $check = ['LOTE_1', 'LOTE_2', 'LOTE_3'];
+
+        $return_date = DateTime::createFromFormat('dmY', $return_date)->format('Y-m-d H:i:s');
+
+        foreach ($result as $key_result => $value) {
+            if (in_array($key_result, $check)) {
+                foreach ($value as $key_value => $r) {
+                    if ($key_value != "LOTE_STATUS") {
+                        if ($r["inscricao"] != false) {
+                            $payment_id = 0;
+                            $file_id = $file->id;
+                            $status = $r['status'] ? 3 : 4;
+                            $error = $status == 3 ? "" : $r["reason"];
+                            $installment = 0;
+                            // 1. Verificar se a primeira parcela já foi paga
                             // a. Se foi paga, atualize a parcela dois.
                             // b. Se não foi paga, atualize a parcela um.
                             // c. Se as duas já foram pagar, não fazer nada e botar no log.
-    
-                        $secultce_payment = $app->repo("SecultCEPayment")->findBy([
-                            "registration" => $r["inscricao"]
-                        ], ['installment' => 'asc']);
-    
-                        if ($secultce_payment[0]->status == 3 &&  $secultce_payment[1]->status == 3) {
-                            $app->log->info("\n" . $r["inscricao"] . " já possui as duas parcelas pagas");
-                            continue;
-                        } else if ($secultce_payment[0]->status != 3) {
-                            $payment_id = $secultce_payment[0]->id;
-                            $installment = 1;
-                        } else if ($secultce_payment[1]->status != 3) {
-                            $payment_id = $secultce_payment[1]->id;
-                            $installment = 2;
-                        }
-    
-    
-                        $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date', return_file_id = $file_id WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
-                        
-                        $action = "retorno";
-                        $resultado = $r["reason"];
-                        $file_date = $return_date;
-    
-                        $query_insert_secultce_payment_history = "
+
+                            $secultce_payment = $app->repo("SecultCEPayment")->findBy([
+                                "registration" => $r["inscricao"]
+                            ], ['installment' => 'asc']);
+
+                            if ($secultce_payment[0]->status == 3 &&  $secultce_payment[1]->status == 3) {
+                                $app->log->info("\n" . $r["inscricao"] . " já possui as duas parcelas pagas");
+                                continue;
+                            } else if ($secultce_payment[0]->status != 3) {
+                                $payment_id = $secultce_payment[0]->id;
+                                $installment = 1;
+                            } else if ($secultce_payment[1]->status != 3) {
+                                $payment_id = $secultce_payment[1]->id;
+                                $installment = 2;
+                            }
+
+
+                            $query_update_secultce_payment = "UPDATE secultce_payment SET status = $status, error = '$error', return_date = '$return_date', return_file_id = $file_id WHERE registration_id = {$r['inscricao']} AND installment = $installment;";
+
+                            $action = "retorno";
+                            $resultado = $r["reason"];
+                            $file_date = $return_date;
+
+                            $query_insert_secultce_payment_history = "
                             INSERT INTO secultce_payment_history 
                                 (payment_id, file_id, action, result, file_date) 
                             VALUES 
                                 ($payment_id, $file_id, '$action', '$resultado', '$file_date');";
-    
-    
-                        $stmt = $app->em->getConnection()->prepare($query_update_secultce_payment);
-                        $stmt->execute();
-    
-                        $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
-                        $stmt->execute();
+
+
+                            $stmt = $app->em->getConnection()->prepare($query_update_secultce_payment);
+                            $stmt->execute();
+
+                            $stmt = $app->em->getConnection()->prepare($query_insert_secultce_payment_history);
+                            $stmt->execute();
+                        }
                     }
                 }
             }
         }
+
+        $app->disableAccessControl();
+        $opportunity = $app->repo("Opportunity")->find($opportunity->id);
+        $opportunity->refresh();
+        $files = $opportunity->cnab240_eventos_processed_files;
+        $files->{basename($file->getPath())} = date("d/m/Y \à\s H:i");
+        $opportunity->cnab240_eventos_processed_files = $files;
+        $opportunity->save(true);
+        $app->enableAccessControl();
+
+        $this->finish("ok");
     }
-
-    $app->disableAccessControl();
-    $opportunity = $app->repo("Opportunity")->find($opportunity->id);
-    $opportunity->refresh();
-    $files = $opportunity->cnab240_eventos_processed_files;
-    $files->{basename($file->getPath())} = date("d/m/Y \à\s H:i");
-    $opportunity->cnab240_eventos_processed_files = $files;
-    $opportunity->save(true);
-    $app->enableAccessControl();
-
-    $this->finish("ok");
-  }
 
 
     public function ALL_bankData()
@@ -2012,8 +2002,8 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
         $agencia = $this->data['agencia'];
         $tipoConta = json_encode($this->data['contaTipe']);
         $conta = $this->data['conta'];
-        //var_dump($tipoConta);
-        //die();
+        $cpf = $this->data['cpf'];
+        $nomeCompleto = $this->data['nomeCompleto'];
         $updateBanco = "
             update 
                 public.registration_meta
@@ -2057,6 +2047,100 @@ class Auxilio extends \MapasCulturais\Controllers\Registration
                 and key = 'field_26528'
                 and REPLACE(key, 'field_', '')::int in (select id from public.registration_field_configuration where id = 26528 and opportunity_id = 2852)
         ";
+
+        //-------------------------------------- ALTERAÇÃO DE NOME COMPLETO E CPF --------------------------------------------------------
+        $updateCPFAgentMeta = "
+            update
+                agent_meta
+            set
+                value = '$cpf'
+            where
+                key = 'documento'
+                and object_id in(select 
+                                    agent_id 
+                                from 
+                                    public.registration as r
+                                        left join public.agent_meta as am
+                                            on am.object_id = r.agent_id
+                                where 
+                                    r.opportunity_id = 2852	
+                                    and r.status = 10
+                                    and r.id = $num_inscricao)
+        ";
+        $updateCPFRegistration = "
+            update
+                registration
+            set
+                agents_data = jsonb_set(agents_data::jsonb, '{owner, documento}', '$asp$cpf$asp', true)
+            where
+                id = $num_inscricao
+                and opportunity_id = 2852
+                and status = 10
+        ";
+
+        $updateCPFRegistrationMeta = "
+            update 
+                registration_meta
+            set 
+                value = '$cpf'
+            where
+                key = 'field_26519'
+                and REPLACE(key, 'field_', '')::int in (select id from public.registration_field_configuration where id = 26519 and opportunity_id = 2852)
+                and object_id in(select r.id from registration as r where r.opportunity_id = 2852 and r.status = 10 and r.id = $num_inscricao)
+    
+        ";
+
+        $updateNomeAgentMeta = "
+            update
+                agent_meta
+            set
+                value = '$nomeCompleto'
+            where
+                key = 'nomeCompleto'
+                and object_id in(select 
+                                    agent_id 
+                                from 
+                                    public.registration as r
+                                        left join public.agent_meta as am
+                                            on am.object_id = r.agent_id
+                                where 
+                                    r.opportunity_id = 2852	
+                                    and r.status = 10
+                                    and r.id = $num_inscricao)
+        ";
+        $updateNomeRegistration = "
+            update
+                registration
+            set
+                agents_data = jsonb_set(agents_data::jsonb, '{owner, nomeCompleto}', '$asp$nomeCompleto$asp', true)
+            where
+                id = $num_inscricao
+                and opportunity_id = 2852
+                and status = 10
+        ";
+        $updateNomeRegistrationMeta = "
+            update 
+                registration_meta
+            set 
+                value = '$nomeCompleto'
+            where
+                key = 'field_26508'
+                and REPLACE(key, 'field_', '')::int in (select id from public.registration_field_configuration where id = 26508 and opportunity_id = 2852)
+                and object_id in(select r.id from registration as r where r.opportunity_id = 2852 and r.status = 10 and r.id = $num_inscricao)
+        ";
+        //------------------------------------------------------------------------------------------------------------------------------------------
+        $stmt = $app->em->getConnection()->prepare($updateCPFAgentMeta);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateCPFRegistration);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateCPFRegistrationMeta);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateNomeAgentMeta);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateNomeRegistration);
+        $stmt->execute();
+        $stmt = $app->em->getConnection()->prepare($updateNomeRegistrationMeta);
+        $stmt->execute();
         $stmt = $app->em->getConnection()->prepare($updateBanco);
         $stmt->execute();
         $stmt = $app->em->getConnection()->prepare($updateAgencia);
