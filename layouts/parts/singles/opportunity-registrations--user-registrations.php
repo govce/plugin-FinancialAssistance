@@ -85,7 +85,9 @@ if (isset($msg['mensagem'])) {
                     sp2.ERROR as erro_pg_2,
                     sp2.INSTALLMENT as parcela_pg_2,
                     sp2.PAYMENT_DATE as data_pg_2,
-                    sp2.value as valor_pg_2
+                    sp2.value as valor_pg_2,
+                    sp2.status as status_parcela_2,
+                    sp1.status as status_parcela_1
                 
                 FROM 
                     public.secultce_payment as sp1
@@ -610,7 +612,7 @@ if (isset($msg['mensagem'])) {
                             <br>
                             <div>
 
-                                <?php if (isset($data[0]['erro_pg_1']) && (($data[0]['erro_pg_1']) != '')) : ?>
+                                <?php if (isset($data[0]['erro_pg_1']) && (($data[0]['erro_pg_1']) != '') && (($data[0]['status_parcela_1']) == 4)) : ?>
                                     <div><b>Erro de pagamento da 1ª parcela: </b></div>
                                     <div>
                                         <label>
@@ -621,7 +623,7 @@ if (isset($msg['mensagem'])) {
                                         </label>
                                     </div>
                                 <?php endif; ?>
-                                <?php if (isset($data[0]['erro_pg_2']) && (($data[0]['erro_pg_2']) != '')) : ?>
+                                <?php if (isset($data[0]['erro_pg_2']) && (($data[0]['erro_pg_2']) != '') && (($data[0]['status_parcela_2']) == 4)) : ?>
                                     <div><b>Erro de pagamento da 2ª parcela: </b></div>
                                     <div>
                                         <label>
