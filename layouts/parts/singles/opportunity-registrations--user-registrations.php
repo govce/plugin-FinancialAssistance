@@ -422,7 +422,7 @@ if (isset($msg['mensagem'])) {
         ];
         //VARIAVEIS DE VALIDAÇÃO DO PERÍODO DE ALTERAÇÃO DE DADOS BANCÁRIOS
         $dataAtual = date("Y-m-d H:i:s", time());
-        $dataFimInscricao = '2021-06-15 23:59:59';
+        $dataFimInscricao = '2021-06-22 23:59:59';
         ?>
         <table class="my-registrations">
             <caption><?php \MapasCulturais\i::_e("Minhas inscrições"); ?></caption>
