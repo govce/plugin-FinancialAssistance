@@ -65,10 +65,12 @@ if (isset($msg['mensagem'])) {
         $sqlData = " 
                 SELECT
                     CASE
-                        WHEN sp1.STATUS IS NULL OR sp1.STATUS < 3 THEN 'PENDENTE'
-                        WHEN sp1.STATUS = 3 THEN 'APROVADO'
-                        WHEN sp1.STATUS = 4 THEN 'REPROVADO'
-                        ELSE
+                    WHEN sp1.STATUS IS NULL OR sp1.STATUS = 0 THEN 'PENDENTE'
+                    WHEN sp1.STATUS = 2 AND sp1.ERROR IS NOT NULL THEN 'REENVIADO PARA PAGAMENTO: '|| to_char(sp1.SENT_DATE, 'DD-MON-YYYY HH24:MI:SS')
+                    WHEN sp1.STATUS = 2 AND sp1.ERROR IS NULL THEN 'REENVIADO PARA PAGAMENTO: '|| to_char(sp1.SENT_DATE, 'DD-MON-YYYY HH24:MI:SS')
+                    WHEN sp1.STATUS = 3 THEN 'APROVADO'
+                    WHEN sp1.STATUS = 4 THEN 'REPROVADO'
+                    ELSE
                             'PENDENTE'
                     END as resultado_pg_1,
                     sp1.ERROR as erro_pg_1,
@@ -76,7 +78,9 @@ if (isset($msg['mensagem'])) {
                     sp1.PAYMENT_DATE as data_pg_1,
                     sp1.value as valor_pg_1,
                     CASE
-                        WHEN sp2.STATUS IS NULL OR sp2.STATUS < 3 THEN 'PENDENTE'
+                        WHEN sp2.STATUS IS NULL OR sp2.STATUS = 0 THEN 'PENDENTE'
+                        WHEN sp2.STATUS = 2 AND sp2.ERROR IS NOT NULL THEN 'REENVIADO PARA PAGAMENTO: '|| to_char(sp2.SENT_DATE, 'DD-MON-YYYY HH24:MI:SS')
+                        WHEN sp2.STATUS = 2 AND sp2.ERROR IS NULL THEN 'REENVIADO PARA PAGAMENTO: '|| to_char(sp2.SENT_DATE, 'DD-MON-YYYY HH24:MI:SS')
                         WHEN sp2.STATUS = 3 THEN 'APROVADO'
                         WHEN sp2.STATUS = 4 THEN 'REPROVADO'
                         ELSE
@@ -556,14 +560,6 @@ if (isset($msg['mensagem'])) {
                                     ?>
                                 </div>
                             <?php elseif ((empty($data[0]['resultado_pg_1']) == true && empty($data[0]['data_pg_1']) == true) && $status_inscricao >= '10') : ?>
-                                <div>
-                                    <b>Situação do Pagamento: </b>entre 20/04 a 30/04
-                                </div>
-                                <!-- <div><?php //echo ('<b>Data do Pagamento: </b>');
-                                            //echo (date("d/m/Y", strtotime($data[0]['data_pg_1']))); 
-                                            ?>
-                                </div> -->
-
                                 <br>
                                 <div>
                                     <b>Resultado do Pagamento da 1ª parcela no valor de R$ 500,00: </b>
@@ -574,7 +570,8 @@ if (isset($msg['mensagem'])) {
                                     ?>
                                 </div>
                                 <div><?php echo ('<b>Data do Pagamento: </b>');
-                                        echo ("PENDENTE"); ?>
+                                        echo ("PENDENTE");
+                                        ?>
                                 </div>
                             <?php endif; ?>
                             <?php if ((empty($data[0]['resultado_pg_2']) == false && empty($data[0]['data_pg_2']) == false) && $status_inscricao >= '10') : ?>
@@ -587,15 +584,7 @@ if (isset($msg['mensagem'])) {
                                     echo ($data[0]['resultado_pg_2']);
                                     ?>
                                 </div>
-                                <!-- <div><?php //echo ('<b>Data do Pagamento: </b>');
-                                            //echo (date("d/m/Y", strtotime($data[0]['data_pg_2']))); 
-                                            ?>
-                                </div> -->
                             <?php elseif (empty($data[0]['resultado_pg_2']) == true && empty($data[0]['data_pg_2']) == true && $status_inscricao >= '10') : ?>
-                                <div>
-                                    <b>Situação do Pagamento: </b>entre 15/05 a 31/05
-                                </div>
-
                                 <br>
                                 <div>
                                     <b>Resultado do Pagamento da 2ª parcela no valor de R$ 500,00: </b>
