@@ -38,7 +38,7 @@ class Plugin extends \MapasCulturais\Plugin
     $app->hook('template(opportunity.<<single|edit>>.sidebar-right):end', function () {
       $opportunity = $this->controller->requestedEntity;
       if ($opportunity->canUser('@control')) {
-          $this->part('auxilio/cnab240-uploads', ['entity' => $opportunity]);
+        $this->part('auxilio/cnab240-uploads', ['entity' => $opportunity]);
       }
     });
 
